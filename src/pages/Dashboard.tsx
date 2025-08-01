@@ -45,21 +45,16 @@ export const Dashboard: React.FC = () => {
     setIsLoading(true);
     try {
       console.log('Starting data scraping...');
-      const scrapedData = await scraper.scrapeAllStations();
+      await scraper.scrapeAllStations();
       
-      if (scrapedData.length > 0) {
-        const alignedData = scraper.alignToReferenceTime(scrapedData);
-        await dbService.saveWeatherData(alignedData);
-        await loadLatestData();
-        await loadRecentData();
-        console.log(`Successfully scraped and saved ${alignedData.length} records`);
-        alert(`${alignedData.length}件のデータを取得しました`);
-      } else {
-        alert('データの取得に失敗しました');
-      }
+      // Reload data from the backend
+      await loadLatestData();
+      await loadRecentData();
+      console.log('Successfully scraped and saved data');
+      alert('データを取得しました');
     } catch (error) {
       console.error('Scraping error:', error);
-      alert('データ取得中にエラーが発生しました: ' + (error as Error).message);
+      alert('データ取得中にエラーが発生しました。Pythonサーバーが起動していることを確認してください。');
     } finally {
       setIsLoading(false);
     }

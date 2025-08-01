@@ -26,6 +26,16 @@
 
 ## 使用方法
 
+### 0. Pythonサーバーの起動
+```bash
+# バックエンドサーバーを起動
+cd backend
+python app.py
+
+# または npm script を使用
+npm run python-server
+```
+
 ### 1. データ取得
 「データ取得」ボタンをクリックして最新の気象データを収集します。
 
@@ -41,30 +51,16 @@
 ### Cronを使用した自動実行例
 ```bash
 # 毎時00分にデータを取得
-0 * * * * /usr/bin/node /path/to/scraper-script.js
+0 * * * * cd /path/to/project/backend && /usr/bin/python scraper_cron.py
 
 # 30分間隔でデータを取得
-0,30 * * * * /usr/bin/node /path/to/scraper-script.js
+0,30 * * * * cd /path/to/project/backend && /usr/bin/python scraper_cron.py
 ```
 
-### Node.jsスクリプト例
-```javascript
-const { WeatherScraper } = require('./src/services/scraper');
-const { dbService } = require('./src/services/database');
-
-async function runScraper() {
-  const scraper = new WeatherScraper();
-  try {
-    const data = await scraper.scrapeAllStations();
-    const alignedData = scraper.alignToReferenceTime(data);
-    await dbService.saveWeatherData(alignedData);
-    console.log(`Successfully saved ${alignedData.length} records`);
-  } catch (error) {
-    console.error('Scraping error:', error);
-  }
-}
-
-runScraper();
+### Pythonスクリプト例
+```python
+# backend/scraper_cron.py を直接実行
+python backend/scraper_cron.py
 ```
 
 ## 技術仕様
@@ -75,13 +71,14 @@ runScraper();
 - Lucide React (アイコン)
 
 ### バックエンド
-- Node.js
-- Axios (HTTP クライアント)
-- Cheerio (HTML パース)
+- Python 3.x
+- urllib (HTTP クライアント)
+- html.parser (HTML パース)
+- SQLite (データベース)
 
 ### データベース
-- 現在: インメモリストレージ (開発用)
-- 本番推奨: Supabase/PostgreSQL
+- SQLite (weather_data.db)
+- 自動的にプロジェクトディレクトリに作成されます
 
 ## データ形式
 
@@ -100,11 +97,19 @@ runScraper();
 
 ## 開発・カスタマイズ
 
-### 新しい観測地点の追加
-`src/types/weather.ts` の `STATIONS` 配列に新しい地点を追加してください。
+### サーバー起動
+1. Pythonバックエンドサーバーを起動: `python backend/app.py`
+2. フロントエンド開発サーバーを起動: `npm run dev`
 
-### データベースの変更
-`src/services/database.ts` を実際のデータベース実装に置き換えてください。
+### 新しい観測地点の追加
+`backend/app.py` の `WeatherScraper.stations` 配列に新しい地点を追加してください。
+
+### APIエンドポイント
+- `GET /api/weather/latest` - 最新データ取得
+- `GET /api/weather/data` - 期間指定データ取得
+- `POST /api/weather/scrape` - データスクレイピング実行
+- `GET /api/stations` - 観測地点情報取得
+- `GET /api/weather/stats` - データベース統計情報
 
 ## ライセンス
 
