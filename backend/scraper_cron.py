@@ -18,16 +18,34 @@ def main():
         db = WeatherDatabase()
         scraper = WeatherScraper()
         
+        # Get latest data from database to check for updates
+        latest_db_data = db.get_latest_data()
+        latest_timestamps = {}
+        for data in latest_db_data:
+            latest_timestamps[data['station_code']] = data['timestamp']
+        
         # Scrape data from all stations
         scraped_data = scraper.scrape_all_stations()
         
         if scraped_data:
-            saved_count = db.save_weather_data(scraped_data)
-            print(f"[{datetime.now()}] Successfully saved {saved_count} records")
+            # Filter out data that already exists in database
+            new_data = []
+            for data in scraped_data:
+                station_code = data['station_code']
+                timestamp = data['timestamp']
+                
+                if station_code not in latest_timestamps or timestamp > latest_timestamps[station_code]:
+                    new_data.append(data)
             
-            # Print summary
-            total_records = db.get_data_count()
-            print(f"[{datetime.now()}] Total records in database: {total_records}")
+            if new_data:
+                saved_count = db.save_weather_data(new_data)
+                print(f"[{datetime.now()}] Successfully saved {saved_count} new records")
+                
+                # Print summary
+                total_records = db.get_data_count()
+                print(f"[{datetime.now()}] Total records in database: {total_records}")
+            else:
+                print(f"[{datetime.now()}] No new data to save")
         else:
             print(f"[{datetime.now()}] No data was scraped")
             

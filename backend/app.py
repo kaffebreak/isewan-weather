@@ -1,51 +1,37 @@
 #!/usr/bin/env python3
 import json
 import sqlite3
-import urllib.request
-import urllib.parse
+import requests
+from bs4 import BeautifulSoup
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import re
 from datetime import datetime, timedelta
-import html.parser
 import threading
 import time
 import os
 
-class HTMLTableParser(html.parser.HTMLParser):
+class HTMLTableParser:
     def __init__(self):
-        super().__init__()
-        self.in_table = False
-        self.in_row = False
-        self.in_cell = False
-        self.current_row = []
         self.rows = []
-        self.cell_data = ""
+    
+    def parse_html(self, html_content):
+        """Parse HTML content using BeautifulSoup"""
+        soup = BeautifulSoup(html_content, 'html.parser')
+        tables = soup.find_all('table')
         
-    def handle_starttag(self, tag, attrs):
-        if tag == 'table':
-            self.in_table = True
-        elif tag == 'tr' and self.in_table:
-            self.in_row = True
-            self.current_row = []
-        elif tag in ['td', 'th'] and self.in_row:
-            self.in_cell = True
-            self.cell_data = ""
-    
-    def handle_endtag(self, tag):
-        if tag == 'table':
-            self.in_table = False
-        elif tag == 'tr' and self.in_row:
-            self.in_row = False
-            if self.current_row:
-                self.rows.append(self.current_row)
-        elif tag in ['td', 'th'] and self.in_cell:
-            self.in_cell = False
-            self.current_row.append(self.cell_data.strip())
-    
-    def handle_data(self, data):
-        if self.in_cell:
-            self.cell_data += data
+        for table in tables:
+            rows = []
+            for tr in table.find_all('tr'):
+                row = []
+                for cell in tr.find_all(['td', 'th']):
+                    row.append(cell.get_text(strip=True))
+                if row:  # Only add non-empty rows
+                    rows.append(row)
+            
+            if rows:
+                self.rows = rows
+                break  # Use the first table with data
 
 class WeatherDatabase:
     def __init__(self, db_path='weather_data.db'):
@@ -177,56 +163,65 @@ class WeatherScraper:
                 'name': '伊良湖岬',
                 'code': 'iragomisaki_vtss',
                 'url': 'https://www6.kaiho.mlit.go.jp/isewan/kisyou/iragomisaki_vtss.html',
-                'has_wave_height': True
+                'has_wave_height': False,  # 波高なし
+                'update_interval': 15  # 15分更新
             },
             {
-                'name': '伊勢湾2番ブイ',
+                'name': '伊勢湾2号ブイ',
                 'code': 'iragosuido_southeast_aisss',
                 'url': 'https://www6.kaiho.mlit.go.jp/isewan/kisyou/iragosuido_southeast_aisss.html',
-                'has_wave_height': True
+                'has_wave_height': True,  # 波高あり
+                'update_interval': 30  # 30分更新
             },
             {
                 'name': '大王埼灯台',
                 'code': 'daiosaki_lt',
                 'url': 'https://www6.kaiho.mlit.go.jp/isewan/kisyou/daiosaki_lt.html',
-                'has_wave_height': False
+                'has_wave_height': True,  # 波高あり（気圧の後）
+                'update_interval': 15  # 15分更新
             },
             {
-                'name': '高潮防波堤',
+                'name': '名古屋港高潮防波堤',
                 'code': 'nagoyako_bw',
                 'url': 'https://www6.kaiho.mlit.go.jp/nagoyako/kisyou/nagoyako_bw.html',
-                'has_wave_height': False
+                'has_wave_height': False,  # 波高なし
+                'update_interval': 15  # 15分更新
             },
             {
-                'name': '四日市防波堤信号所',
+                'name': '四日市港防波堤信号所',
                 'code': 'yokkaichiko_bkw_lt',
                 'url': 'https://www6.kaiho.mlit.go.jp/04kanku/yokkaichi/yokkaichiko_bkw_lt/kisyou/index.html',
-                'has_wave_height': False
+                'has_wave_height': False,  # 波高なし
+                'update_interval': 30  # 30分更新
             }
         ]
     
     def fetch_page_content(self, url):
         try:
-            req = urllib.request.Request(
-                url,
-                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-            )
-            with urllib.request.urlopen(req, timeout=15) as response:
-                content = response.read()
-                # Try different encodings
-                for encoding in ['utf-8', 'shift_jis', 'euc-jp']:
-                    try:
-                        return content.decode(encoding)
-                    except UnicodeDecodeError:
-                        continue
-                return content.decode('utf-8', errors='ignore')
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            response = requests.get(url, headers=headers, timeout=15)
+            response.raise_for_status()
+            
+            # Try different encodings
+            for encoding in ['utf-8', 'shift_jis', 'euc-jp']:
+                try:
+                    response.encoding = encoding
+                    return response.text
+                except UnicodeDecodeError:
+                    continue
+            
+            # Fallback to utf-8 with errors='ignore'
+            response.encoding = 'utf-8'
+            return response.text
         except Exception as e:
             print(f"Failed to fetch {url}: {e}")
             return None
     
     def parse_table_data(self, html_content, station_code, has_wave_height):
         parser = HTMLTableParser()
-        parser.feed(html_content)
+        parser.parse_html(html_content)
         
         if not parser.rows:
             print(f"No table found for station: {station_code}")
@@ -247,10 +242,20 @@ class WeatherScraper:
                 continue
             
             try:
-                time_text = row[0].strip()
-                wind_dir_text = row[1].strip()
-                wind_speed_text = row[2].strip()
-                wave_height_text = row[3].strip() if has_wave_height and len(row) > 3 else ''
+                # Handle different table structures
+                if len(row) >= 4:  # Date and time in separate columns
+                    date_text = row[0].strip()
+                    time_text = row[1].strip()
+                    wind_dir_text = row[2].strip()
+                    wind_speed_text = row[3].strip()
+                    # Check if there's a wave height column (last column)
+                    wave_height_text = row[-1].strip() if len(row) > 4 else ''
+                else:  # Time in first column
+                    time_text = row[0].strip()
+                    wind_dir_text = row[1].strip()
+                    wind_speed_text = row[2].strip()
+                    wave_height_text = row[3].strip() if len(row) > 3 else ''
+                    date_text = None
                 
                 # Parse time
                 current_date = datetime.now()
@@ -260,6 +265,17 @@ class WeatherScraper:
                         hours = int(time_parts[0])
                         minutes = int(time_parts[1]) if len(time_parts) > 1 else 0
                         timestamp = current_date.replace(hour=hours, minute=minutes, second=0, microsecond=0)
+                        
+                        # If we have a date, use it instead of current date
+                        if date_text and '/' in date_text:
+                            try:
+                                date_parts = date_text.split('/')
+                                year = int(date_parts[0])
+                                month = int(date_parts[1])
+                                day = int(date_parts[2])
+                                timestamp = timestamp.replace(year=year, month=month, day=day)
+                            except (ValueError, IndexError):
+                                pass  # Use current date if date parsing fails
                     except ValueError:
                         continue
                 else:
@@ -269,7 +285,7 @@ class WeatherScraper:
                 wind_speed = None
                 if wind_speed_text and wind_speed_text != '-':
                     try:
-                        # Extract numeric value
+                        # Extract numeric value (handle formats like "8m", "8.5m/s", etc.)
                         numeric_match = re.search(r'(\d+\.?\d*)', wind_speed_text)
                         if numeric_match:
                             wind_speed = float(numeric_match.group(1))
@@ -278,7 +294,7 @@ class WeatherScraper:
                 
                 # Parse wave height
                 wave_height = None
-                if has_wave_height and wave_height_text and wave_height_text != '-':
+                if wave_height_text and wave_height_text != '-':
                     try:
                         numeric_match = re.search(r'(\d+\.?\d*)', wave_height_text)
                         if numeric_match:
@@ -342,8 +358,8 @@ class WeatherScraper:
         
         for ref_time in reference_timestamps:
             for station in self.stations:
-                station_data = next((d for d in all_data 
-                                   if d['station_code'] == station['code'] and d['timestamp'] == ref_time), None)
+                # Find the closest data point for this station based on update interval
+                station_data = self._find_closest_data(all_data, station, ref_time)
                 
                 if station_data:
                     aligned_data.append(station_data)
@@ -360,6 +376,34 @@ class WeatherScraper:
         
         print(f"Aligned {len(aligned_data)} records to reference time")
         return aligned_data
+    
+    def _find_closest_data(self, all_data, station, reference_time):
+        """Find the closest data point for a station based on its update interval"""
+        station_data = [d for d in all_data if d['station_code'] == station['code']]
+        
+        if not station_data:
+            return None
+        
+        # Try exact match first
+        exact_match = next((d for d in station_data if d['timestamp'] == reference_time), None)
+        if exact_match:
+            return exact_match
+        
+        # If no exact match, find the closest data within the update interval
+        ref_dt = datetime.fromisoformat(reference_time)
+        update_interval = station.get('update_interval', 15)  # Default to 15 minutes
+        
+        for data in station_data:
+            data_dt = datetime.fromisoformat(data['timestamp'])
+            time_diff = abs((ref_dt - data_dt).total_seconds() / 60)  # Difference in minutes
+            
+            # If within update interval, use this data
+            if time_diff <= update_interval:
+                return data
+        
+        # If no data within interval, return the closest one
+        closest_data = min(station_data, key=lambda d: abs((ref_dt - datetime.fromisoformat(d['timestamp'])).total_seconds()))
+        return closest_data
 
 class WeatherAPIHandler(BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):

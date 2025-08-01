@@ -6,11 +6,11 @@
 
 ### データ収集
 - 5箇所の海洋気象観測地点からデータを自動取得
-  - 伊良湖岬 (基準時間軸)
-  - 伊勢湾2番ブイ
-  - 大王埼灯台
-  - 高潮防波堤
-  - 四日市防波堤信号所
+  - 伊良湖岬 (基準時間軸、15分更新)
+  - 伊勢湾2号ブイ (30分更新)
+  - 大王埼灯台 (15分更新)
+  - 名古屋港高潮防波堤 (15分更新)
+  - 四日市港防波堤信号所 (30分更新)
 
 ### データ項目
 - 風向
@@ -24,17 +24,40 @@
 - CSVファイルでのデータエクスポート
 - レスポンシブWebインターフェース
 
-## 使用方法
+## セットアップ
 
-### 0. Pythonサーバーの起動
+### 1. 依存関係のインストール
+```bash
+# フロントエンド依存関係
+npm install
+
+# バックエンド依存関係
+```bash
+# venv環境を使用する場合
+cd backend
+source ../.venv/bin/activate
+pip install -r requirements.txt
+
+# または直接インストール
+pip install beautifulsoup4 requests
+```
+```
+
+### 2. サーバーの起動
 ```bash
 # バックエンドサーバーを起動
 cd backend
+source ../.venv/bin/activate  # venv環境を使用する場合
 python app.py
 
 # または npm script を使用
 npm run python-server
+
+# フロントエンド開発サーバーを起動（別ターミナルで）
+npm run dev
 ```
+
+## 使用方法
 
 ### 1. データ取得
 「データ取得」ボタンをクリックして最新の気象データを収集します。
@@ -50,10 +73,10 @@ npm run python-server
 
 ### Cronを使用した自動実行例
 ```bash
-# 毎時00分にデータを取得
-0 * * * * cd /path/to/project/backend && /usr/bin/python scraper_cron.py
+# 10分ごとにデータを取得（推奨）
+*/10 * * * * cd /path/to/project/backend && /usr/bin/python scraper_cron.py
 
-# 30分間隔でデータを取得
+# または30分間隔でデータを取得
 0,30 * * * * cd /path/to/project/backend && /usr/bin/python scraper_cron.py
 ```
 
@@ -72,8 +95,8 @@ python backend/scraper_cron.py
 
 ### バックエンド
 - Python 3.x
-- urllib (HTTP クライアント)
-- html.parser (HTML パース)
+- requests (HTTP クライアント)
+- BeautifulSoup4 (HTML パース)
 - SQLite (データベース)
 
 ### データベース
@@ -91,9 +114,10 @@ python backend/scraper_cron.py
 ## 注意事項
 
 1. **時間軸の統一**: 全データは伊良湖岬の観測時間に合わせて整列されます
-2. **欠損データ**: 30分毎の観測データが無い場合は空欄で記録されます
-3. **波高データ**: 観測地点により波高データが無い場合があります
-4. **アクセス制限**: 海上保安庁サイトへの過度なアクセスを避けるため、適切な間隔を空けてください
+2. **更新頻度**: 伊良湖岬・大王埼灯台・名古屋港高潮防波堤は15分更新、伊勢湾2号ブイ・四日市港防波堤信号所は30分更新です
+3. **時間精度**: データは年・月・日・時・分まで記録されます
+4. **波高データ**: 観測地点により波高データが無い場合があります
+5. **アクセス制限**: 海上保安庁サイトへの過度なアクセスを避けるため、適切な間隔を空けてください
 
 ## 開発・カスタマイズ
 
