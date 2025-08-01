@@ -3,16 +3,33 @@ import { WeatherData } from '../types/weather';
 import { LatestDataCard } from './LatestDataCard';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 
+const STATION_ORDER = [
+  'iragomisaki_vtss',      // 伊良湖岬
+  'iragosuido_southeast_aisss', // 伊勢湾2号ブイ
+  'daiosaki_lt',           // 大王埼灯台
+  'nagoyako_bw',           // 名古屋港高潮防波堤
+  'yokkaichiko_bkw_lt'     // 四日市港防波堤信号所
+];
+
+const getOrderedStations = (data: WeatherData[]): WeatherData[] => {
+  const stationMap = new Map(data.map(item => [item.station_code, item]));
+  return STATION_ORDER
+    .map(code => stationMap.get(code))
+    .filter(Boolean) as WeatherData[];
+};
+
 interface LatestDataGridProps {
   data: WeatherData[];
   onRefresh: () => void;
   isLoading: boolean;
+  onStationClick: (stationCode: string) => void;
 }
 
 export const LatestDataGrid: React.FC<LatestDataGridProps> = ({
   data,
   onRefresh,
-  isLoading
+  isLoading,
+  onStationClick
 }) => {
   if (data.length === 0) {
     return (
@@ -46,10 +63,11 @@ export const LatestDataGrid: React.FC<LatestDataGridProps> = ({
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {data.map((stationData) => (
+        {getOrderedStations(data).map((stationData) => (
           <LatestDataCard
             key={stationData.station_code}
             data={stationData}
+            onClick={() => onStationClick(stationData.station_code)}
           />
         ))}
       </div>

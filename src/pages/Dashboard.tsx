@@ -8,6 +8,8 @@ import { DataTable } from '../components/DataTable';
 export const Dashboard: React.FC = () => {
   const [latestData, setLatestData] = useState<WeatherData[]>([]);
   const [recentData, setRecentData] = useState<WeatherData[]>([]);
+  const [filteredRecentData, setFilteredRecentData] = useState<WeatherData[]>([]);
+  const [selectedStation, setSelectedStation] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
   const scraper = new WeatherScraper();
@@ -28,14 +30,16 @@ export const Dashboard: React.FC = () => {
 
   const loadRecentData = async () => {
     try {
-      // Get data from last 6 hours
-      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+      // Get data from last 3 hours
+      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
       const data = await dbService.getWeatherData(
-        sixHoursAgo.toISOString().slice(0, 19),
+        threeHoursAgo.toISOString().slice(0, 19),
         undefined,
         undefined
       );
-      setRecentData(data.slice(0, 50)); // Limit to 50 most recent records
+      const recentDataSlice = data.slice(0, 50); // Limit to 50 most recent records
+      setRecentData(recentDataSlice);
+      setFilteredRecentData(recentDataSlice);
     } catch (error) {
       console.error('Error loading recent data:', error);
     }
@@ -60,6 +64,24 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const handleStationClick = (stationCode: string) => {
+    setSelectedStation(stationCode);
+    if (stationCode) {
+      // Filter data for the selected station from recent data
+      const filtered = recentData.filter(data => 
+        data.station_code === stationCode
+      );
+      setFilteredRecentData(filtered);
+    } else {
+      setFilteredRecentData(recentData);
+    }
+  };
+
+  const handleClearFilter = () => {
+    setSelectedStation('');
+    setFilteredRecentData(recentData);
+  };
+
   return (
     <div className="space-y-8">
       {/* Latest Data Section */}
@@ -67,13 +89,31 @@ export const Dashboard: React.FC = () => {
         data={latestData}
         onRefresh={handleRefresh}
         isLoading={isLoading}
+        onStationClick={handleStationClick}
       />
 
       {/* Recent Data Section */}
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-gray-900">最近のデータ (過去6時間)</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">
+            最近のデータ (過去3時間)
+            {selectedStation && (
+              <span className="text-lg font-normal text-gray-600 ml-2">
+                - {latestData.find(d => d.station_code === selectedStation)?.station_name} (フィルター適用)
+              </span>
+            )}
+          </h2>
+          {selectedStation && (
+            <button
+              onClick={handleClearFilter}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              フィルタークリア
+            </button>
+          )}
+        </div>
         <DataTable
-          data={recentData}
+          data={filteredRecentData}
           title="最近の観測データ"
         />
       </div>

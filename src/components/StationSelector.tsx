@@ -5,11 +5,15 @@ import { MapPin } from 'lucide-react';
 interface StationSelectorProps {
   selectedStation: string;
   onStationChange: (stationCode: string) => void;
+  isMarineMode?: boolean;
+  onMarineModeChange?: (isMarine: boolean) => void;
 }
 
 export const StationSelector: React.FC<StationSelectorProps> = ({
   selectedStation,
-  onStationChange
+  onStationChange,
+  isMarineMode = false,
+  onMarineModeChange
 }) => {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
@@ -47,6 +51,23 @@ export const StationSelector: React.FC<StationSelectorProps> = ({
             <span className="text-sm font-medium">{station.name}</span>
           </label>
         ))}
+        
+        {onMarineModeChange && (
+          <label className="flex items-center p-3 border-2 border-teal-500 rounded-lg cursor-pointer hover:bg-teal-50 col-span-full">
+            <input
+              type="radio"
+              name="station"
+              value="marine"
+              checked={isMarineMode}
+              onChange={(e) => {
+                onMarineModeChange(true);
+                onStationChange(''); // Clear individual station selection
+              }}
+              className="mr-3 text-teal-600"
+            />
+            <span className="text-sm font-medium text-teal-700">湾内乗下船用（3箇所横並び）</span>
+          </label>
+        )}
       </div>
     </div>
   );

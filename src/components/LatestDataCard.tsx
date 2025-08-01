@@ -4,9 +4,10 @@ import { Wind, Waves, MapPin, Clock } from 'lucide-react';
 
 interface LatestDataCardProps {
   data: WeatherData;
+  onClick?: () => void;
 }
 
-export const LatestDataCard: React.FC<LatestDataCardProps> = ({ data }) => {
+export const LatestDataCard: React.FC<LatestDataCardProps> = ({ data, onClick }) => {
   const getStationColor = (stationCode: string): string => {
     const colors: Record<string, string> = {
       'iragomisaki_vtss': 'from-blue-500 to-blue-600',
@@ -38,7 +39,10 @@ export const LatestDataCard: React.FC<LatestDataCardProps> = ({ data }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+    <div 
+      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={onClick}
+    >
       <div className={`bg-gradient-to-r ${getStationColor(data.station_code)} px-4 py-3`}>
         <div className="flex items-center justify-between">
           <h3 className="text-white font-semibold flex items-center gap-2">

@@ -85,7 +85,13 @@ export const DataTable: React.FC<DataTableProps> = ({ data, title = 'Weather Dat
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {new Date(row.timestamp).toLocaleString('ja-JP')}
+                  {new Date(row.timestamp).toLocaleString('ja-JP', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatWindDirection(row.wind_direction)}

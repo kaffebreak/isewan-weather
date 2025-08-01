@@ -4,12 +4,13 @@ import { dbService } from '../services/database';
 import { DateTimeSelector } from '../components/DateTimeSelector';
 import { StationSelector } from '../components/StationSelector';
 import { DataTable } from '../components/DataTable';
-import { exportToCSV, formatDateTimeForFilename } from '../utils/csvExport';
+import { exportToCSV, exportToCSVForMarine, formatDateTimeForFilename } from '../utils/csvExport';
 import { Download, Search, Database } from 'lucide-react';
 
 export const DownloadPage: React.FC = () => {
   const [filteredData, setFilteredData] = useState<WeatherData[]>([]);
   const [selectedStation, setSelectedStation] = useState('');
+  const [isMarineMode, setIsMarineMode] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -27,7 +28,7 @@ export const DownloadPage: React.FC = () => {
     if (startDate && endDate) {
       handleSearch();
     }
-  }, [selectedStation, startDate, endDate]);
+  }, [selectedStation, isMarineMode, startDate, endDate]);
 
   const handleSearch = async () => {
     setIsSearching(true);
@@ -52,8 +53,43 @@ export const DownloadPage: React.FC = () => {
       return;
     }
     
-    const filename = `marine_weather_${formatDateTimeForFilename()}.csv`;
+    // Create a more descriptive filename
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const timeStr = now.toISOString().slice(11, 16).replace(/:/g, '');
+    const stationStr = selectedStation ? `_${selectedStation}` : '_all_stations';
+    const filename = `isewan_weather_${dateStr}_${timeStr}${stationStr}.csv`;
+    
     exportToCSV(filteredData, filename);
+  };
+
+  const handleMarineDownload = () => {
+    if (filteredData.length === 0) {
+      alert('ダウンロードするデータがありません');
+      return;
+    }
+    
+    // Create marine-specific filename
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const timeStr = now.toISOString().slice(11, 16).replace(/:/g, '');
+    const filename = `isewan_marine_${dateStr}_${timeStr}.csv`;
+    
+    exportToCSVForMarine(filteredData, filename);
+  };
+
+  const handleStationChange = (stationCode: string) => {
+    setSelectedStation(stationCode);
+    if (stationCode !== '') {
+      setIsMarineMode(false);
+    }
+  };
+
+  const handleMarineModeChange = (isMarine: boolean) => {
+    setIsMarineMode(isMarine);
+    if (isMarine) {
+      setSelectedStation('');
+    }
   };
 
   return (
@@ -62,6 +98,7 @@ export const DownloadPage: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-900 mb-6">データダウンロード</h2>
         <p className="text-gray-600 mb-6">
           期間と観測地点を指定してデータを検索し、CSVファイルとしてダウンロードできます。
+          「湾内乗下船用」を選択すると、伊良湖岬基準の時間軸で3箇所の観測データを横並びで出力できます。
         </p>
       </div>
 
@@ -75,7 +112,9 @@ export const DownloadPage: React.FC = () => {
         />
         <StationSelector
           selectedStation={selectedStation}
-          onStationChange={setSelectedStation}
+          onStationChange={handleStationChange}
+          isMarineMode={isMarineMode}
+          onMarineModeChange={handleMarineModeChange}
         />
       </div>
 
@@ -97,14 +136,25 @@ export const DownloadPage: React.FC = () => {
               {isSearching ? '検索中...' : '検索'}
             </button>
             
-            <button
-              onClick={handleDownload}
-              disabled={filteredData.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              CSVダウンロード
-            </button>
+            {isMarineMode ? (
+              <button
+                onClick={handleMarineDownload}
+                disabled={filteredData.length === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                CSVダウンロード
+              </button>
+            ) : (
+              <button
+                onClick={handleDownload}
+                disabled={filteredData.length === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                CSVダウンロード
+              </button>
+            )}
           </div>
         </div>
       </div>
