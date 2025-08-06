@@ -8,7 +8,7 @@ echo "=== 伊勢湾気象データ管理システム Docker デプロイ開始 =
 
 # 変数設定
 PROJECT_DIR="/opt/isewan-weather"
-DOMAIN="your-domain.com"  # あなたのドメインに変更
+DOMAIN="10.10.10.11"  # 固定IPアドレス
 
 # 1. Docker と Docker Compose のインストール確認
 echo "1. Docker環境を確認中..."
@@ -41,7 +41,7 @@ mkdir -p data logs ssl
 
 # 5. Nginx設定でドメイン名を更新
 echo "5. Nginx設定を更新中..."
-sed -i "s/localhost/$DOMAIN/g" docker/nginx.conf
+sed -i "s/10.10.10.11/$DOMAIN/g" docker/nginx.conf
 
 # 6. Docker イメージをビルド
 echo "6. Dockerイメージをビルド中..."

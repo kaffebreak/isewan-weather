@@ -22,8 +22,8 @@ services:
     image: nginx:alpine
     container_name: isewan-weather-nginx
     ports:
-      - "80:80"
-      - "443:443"
+      - "10.10.10.11:80:80"
+      - "10.10.10.11:443:443"
     volumes:
       - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf
       - ./ssl:/etc/nginx/ssl

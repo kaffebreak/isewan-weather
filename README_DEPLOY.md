@@ -1,22 +1,22 @@
 # Ubuntuサーバーデプロイガイド
 
 ## 前提条件
-- Ubuntu 20.04 LTS以上
+- Ubuntu 20.04 LTS以上 (固定IP: 10.10.10.11)
 - sudo権限を持つユーザー
-- ドメイン名（オプション）
+- 固定IPアドレス設定済み
 
 ## デプロイ手順
 
 ### 1. サーバーにファイルをアップロード
 ```bash
 # プロジェクトファイルをサーバーにアップロード
-scp -r . user@your-server:/tmp/isewan-weather/
+scp -r . user@10.10.10.11:/tmp/isewan-weather/
 ```
 
 ### 2. デプロイスクリプト実行
 ```bash
 # サーバーにSSH接続
-ssh user@your-server
+ssh user@10.10.10.11
 
 # デプロイディレクトリに移動
 cd /tmp/isewan-weather
@@ -36,8 +36,11 @@ sudo ./deploy/deploy.sh
 # Certbot インストール
 sudo apt install certbot python3-certbot-nginx
 
-# SSL証明書取得
-sudo certbot --nginx -d your-domain.com
+# SSL証明書取得（自己署名証明書の場合）
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout /opt/isewan-weather/ssl/server.key \
+  -out /opt/isewan-weather/ssl/server.crt \
+  -subj "/C=JP/ST=Aichi/L=Nagoya/O=IseWan/CN=10.10.10.11"
 
 # 自動更新設定
 sudo crontab -e
