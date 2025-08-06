@@ -73,8 +73,8 @@ npm run dev
 
 ### Cronを使用した自動実行例
 ```bash
-# 10分ごとにデータを取得（推奨）
-*/10 * * * * cd /path/to/project/backend && /usr/bin/python scraper_cron.py
+# 5分ごとにデータを取得（推奨）
+*/5 * * * * cd /path/to/project/backend && /usr/bin/python scraper_cron.py
 
 # または30分間隔でデータを取得
 0,30 * * * * cd /path/to/project/backend && /usr/bin/python scraper_cron.py
