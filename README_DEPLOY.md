@@ -32,21 +32,7 @@ sudo ./deploy/deploy.sh
 ```
 
 ### 3. SSL証明書設定（Let's Encrypt）
-```bash
-# Certbot インストール
-sudo apt install certbot python3-certbot-nginx
-
-# SSL証明書取得（自己署名証明書の場合）
-sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout /opt/isewan-weather/ssl/server.key \
-  -out /opt/isewan-weather/ssl/server.crt \
-  -subj "/C=JP/ST=Aichi/L=Nagoya/O=IseWan/CN=10.10.10.11"
-
-# 自動更新設定
-sudo crontab -e
-# 以下を追加:
-# 0 12 * * * /usr/bin/certbot renew --quiet
-```
+社内ネットワーク限定のため、SSL設定は不要です。
 
 ## システム構成
 
