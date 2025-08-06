@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WeatherData } from '../types/weather';
-import { dbService } from '../services/database';
+import { apiService } from '../services/api';
 import { DateTimeSelector } from '../components/DateTimeSelector';
 import { StationSelector } from '../components/StationSelector';
 import { DataTable } from '../components/DataTable';
@@ -33,7 +33,7 @@ export const DownloadPage: React.FC = () => {
   const handleSearch = async () => {
     setIsSearching(true);
     try {
-      const data = await dbService.getWeatherData(
+      const data = await apiService.getWeatherData(
         startDate || undefined,
         endDate || undefined,
         selectedStation || undefined

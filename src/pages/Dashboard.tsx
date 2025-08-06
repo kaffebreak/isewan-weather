@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WeatherData } from '../types/weather';
-import { WeatherScraper } from '../services/scraper';
-import { dbService } from '../services/database';
+import { apiService } from '../services/api';
 import { LatestDataGrid } from '../components/LatestDataGrid';
 import { DataTable } from '../components/DataTable';
 
@@ -10,19 +9,26 @@ export const Dashboard: React.FC = () => {
   const [recentData, setRecentData] = useState<WeatherData[]>([]);
   const [filteredRecentData, setFilteredRecentData] = useState<WeatherData[]>([]);
   const [selectedStation, setSelectedStation] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const scraper = new WeatherScraper();
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
     loadLatestData();
     loadRecentData();
+    
+    // Set up auto-refresh every 5 minutes
+    const interval = setInterval(() => {
+      loadLatestData();
+      loadRecentData();
+    }, 5 * 60 * 1000); // 5 minutes
+    
+    return () => clearInterval(interval);
   }, []);
 
   const loadLatestData = async () => {
     try {
-      const data = await dbService.getLatestData();
+      const data = await apiService.getLatestData();
       setLatestData(data);
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error loading latest data:', error);
     }
@@ -32,35 +38,16 @@ export const Dashboard: React.FC = () => {
     try {
       // Get data from last 3 hours
       const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
-      const data = await dbService.getWeatherData(
+      const data = await apiService.getWeatherData(
         threeHoursAgo.toISOString().slice(0, 19),
         undefined,
-        undefined
+        undefined,
+        50 // Limit to 50 most recent records
       );
-      const recentDataSlice = data.slice(0, 50); // Limit to 50 most recent records
-      setRecentData(recentDataSlice);
-      setFilteredRecentData(recentDataSlice);
+      setRecentData(data);
+      setFilteredRecentData(data);
     } catch (error) {
       console.error('Error loading recent data:', error);
-    }
-  };
-
-  const handleRefresh = async () => {
-    setIsLoading(true);
-    try {
-      console.log('Starting data scraping...');
-      await scraper.scrapeAllStations();
-      
-      // Reload data from the backend
-      await loadLatestData();
-      await loadRecentData();
-      console.log('Successfully scraped and saved data');
-      alert('データを取得しました');
-    } catch (error) {
-      console.error('Scraping error:', error);
-      alert('データ取得中にエラーが発生しました。Pythonサーバーが起動していることを確認してください。');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -87,9 +74,8 @@ export const Dashboard: React.FC = () => {
       {/* Latest Data Section */}
       <LatestDataGrid
         data={latestData}
-        onRefresh={handleRefresh}
-        isLoading={isLoading}
         onStationClick={handleStationClick}
+        lastUpdated={lastUpdated}
       />
 
       {/* Recent Data Section */}
@@ -127,7 +113,7 @@ export const Dashboard: React.FC = () => {
             <strong>データ項目:</strong> 風向・風速・波高
           </div>
           <div>
-            <strong>更新間隔:</strong> 伊良湖岬基準<br />
+            <strong>自動更新:</strong> 5分間隔<br />
             <strong>時間精度:</strong> 時まで
           </div>
           <div>
@@ -135,6 +121,13 @@ export const Dashboard: React.FC = () => {
             <strong>履歴保存:</strong> 継続蓄積型
           </div>
         </div>
+        {lastUpdated && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-sm text-gray-500">
+              最終更新: {lastUpdated.toLocaleString('ja-JP')}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

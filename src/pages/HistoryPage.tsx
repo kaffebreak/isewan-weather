@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WeatherData } from '../types/weather';
-import { dbService } from '../services/database';
+import { apiService } from '../services/api';
 import { DataTable } from '../components/DataTable';
 import { StationSelector } from '../components/StationSelector';
 import { ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
@@ -25,7 +25,7 @@ export const HistoryPage: React.FC = () => {
   const loadAllData = async () => {
     setIsLoading(true);
     try {
-      const data = await dbService.getWeatherData();
+      const data = await apiService.getWeatherData();
       setAllData(data);
     } catch (error) {
       console.error('Error loading data:', error);
