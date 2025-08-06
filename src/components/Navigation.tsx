@@ -23,8 +23,8 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChang
               <Waves className="w-6 h-6 text-blue-200" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">海洋気象データ管理システム</h1>
-              <p className="text-blue-100 mt-1">Marine Weather Data Management System</p>
+              <h1 className="text-3xl font-bold text-white">伊勢湾気象データ管理システム</h1>
+              <p className="text-blue-100 mt-1">Isewan Weather Data Management System</p>
             </div>
           </div>
         </div>

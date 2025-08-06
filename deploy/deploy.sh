@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# 海洋気象データ管理システム デプロイスクリプト
+# 伊勢湾気象データ管理システム デプロイスクリプト
 # Ubuntu Server用
 
 set -e
 
-echo "=== 海洋気象データ管理システム デプロイ開始 ==="
+echo "=== 伊勢湾気象データ管理システム デプロイ開始 ==="
 
 # 変数設定
-PROJECT_DIR="/var/www/marine-weather"
+PROJECT_DIR="/var/www/isewan-weather"
 DOMAIN="your-domain.com"  # あなたのドメインに変更
-DB_DIR="/var/lib/marine-weather"
+DB_DIR="/var/lib/isewan-weather"
 
 # 1. システム更新とパッケージインストール
 echo "1. システムパッケージを更新中..."
@@ -46,24 +46,24 @@ sudo ln -sf $DB_DIR/weather_data.db $PROJECT_DIR/backend/weather_data.db
 
 # 7. systemdサービス設定
 echo "7. systemdサービスを設定中..."
-sudo cp deploy/marine-weather.service /etc/systemd/system/
+sudo cp deploy/isewan-weather.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable marine-weather
-sudo systemctl start marine-weather
+sudo systemctl enable isewan-weather
+sudo systemctl start isewan-weather
 
 # 8. Nginx設定
 echo "8. Nginxを設定中..."
-sudo cp deploy/nginx.conf /etc/nginx/sites-available/marine-weather
-sudo sed -i "s/your-domain.com/$DOMAIN/g" /etc/nginx/sites-available/marine-weather
-sudo ln -sf /etc/nginx/sites-available/marine-weather /etc/nginx/sites-enabled/
+sudo cp deploy/nginx.conf /etc/nginx/sites-available/isewan-weather
+sudo sed -i "s/your-domain.com/$DOMAIN/g" /etc/nginx/sites-available/isewan-weather
+sudo ln -sf /etc/nginx/sites-available/isewan-weather /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
 
 # 9. Cron設定
 echo "9. Cronジョブを設定中..."
-sudo cp deploy/crontab /tmp/marine-weather-cron
-sudo sed -i "s|/var/www/marine-weather|$PROJECT_DIR|g" /tmp/marine-weather-cron
-sudo crontab -u www-data /tmp/marine-weather-cron
+sudo cp deploy/crontab /tmp/isewan-weather-cron
+sudo sed -i "s|/var/www/isewan-weather|$PROJECT_DIR|g" /tmp/isewan-weather-cron
+sudo crontab -u www-data /tmp/isewan-weather-cron
 
 # 10. ファイル権限設定
 echo "10. ファイル権限を設定中..."
@@ -79,11 +79,11 @@ sudo ufw allow 'Nginx Full'
 echo "=== デプロイ完了 ==="
 echo ""
 echo "サービス状態確認:"
-echo "  sudo systemctl status marine-weather"
+echo "  sudo systemctl status isewan-weather"
 echo "  sudo systemctl status nginx"
 echo ""
 echo "ログ確認:"
-echo "  sudo journalctl -u marine-weather -f"
-echo "  sudo tail -f /var/log/marine-weather-cron.log"
+echo "  sudo journalctl -u isewan-weather -f"
+echo "  sudo tail -f /var/log/isewan-weather-cron.log"
 echo ""
 echo "アクセス: http://$DOMAIN"

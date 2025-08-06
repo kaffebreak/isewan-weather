@@ -10,7 +10,7 @@
 ### 1. サーバーにファイルをアップロード
 ```bash
 # プロジェクトファイルをサーバーにアップロード
-scp -r . user@your-server:/tmp/marine-weather/
+scp -r . user@your-server:/tmp/isewan-weather/
 ```
 
 ### 2. デプロイスクリプト実行
@@ -19,7 +19,7 @@ scp -r . user@your-server:/tmp/marine-weather/
 ssh user@your-server
 
 # デプロイディレクトリに移動
-cd /tmp/marine-weather
+cd /tmp/isewan-weather
 
 # デプロイスクリプトに実行権限付与
 chmod +x deploy/deploy.sh
@@ -48,7 +48,7 @@ sudo crontab -e
 ## システム構成
 
 ```
-/var/www/marine-weather/          # プロジェクトルート
+/var/www/isewan-weather/          # プロジェクトルート
 ├── backend/                      # Pythonバックエンド
 │   ├── app.py                   # APIサーバー
 │   ├── scraper_cron.py          # データ取得スクリプト
@@ -56,14 +56,14 @@ sudo crontab -e
 ├── dist/                        # ビルド済みフロントエンド
 └── venv/                        # Python仮想環境
 
-/var/lib/marine-weather/         # データディレクトリ
+/var/lib/isewan-weather/         # データディレクトリ
 └── weather_data.db              # SQLiteデータベース
 
 /etc/systemd/system/
-└── marine-weather.service       # systemdサービス
+└── isewan-weather.service       # systemdサービス
 
 /etc/nginx/sites-available/
-└── marine-weather               # Nginx設定
+└── isewan-weather               # Nginx設定
 ```
 
 ## 運用コマンド
@@ -71,22 +71,22 @@ sudo crontab -e
 ### サービス管理
 ```bash
 # サービス状態確認
-sudo systemctl status marine-weather
+sudo systemctl status isewan-weather
 
 # サービス再起動
-sudo systemctl restart marine-weather
+sudo systemctl restart isewan-weather
 
 # ログ確認
-sudo journalctl -u marine-weather -f
+sudo journalctl -u isewan-weather -f
 ```
 
 ### データベース管理
 ```bash
 # データベースバックアップ
-sudo cp /var/lib/marine-weather/weather_data.db /backup/weather_data_$(date +%Y%m%d).db
+sudo cp /var/lib/isewan-weather/weather_data.db /backup/weather_data_$(date +%Y%m%d).db
 
 # データベース確認
-sqlite3 /var/lib/marine-weather/weather_data.db "SELECT COUNT(*) FROM weather_data;"
+sqlite3 /var/lib/isewan-weather/weather_data.db "SELECT COUNT(*) FROM weather_data;"
 ```
 
 ### Cron確認
@@ -95,13 +95,13 @@ sqlite3 /var/lib/marine-weather/weather_data.db "SELECT COUNT(*) FROM weather_da
 sudo crontab -u www-data -l
 
 # Cronログ確認
-sudo tail -f /var/log/marine-weather-cron.log
+sudo tail -f /var/log/isewan-weather-cron.log
 ```
 
 ### システム更新
 ```bash
 # 更新スクリプト実行
-cd /var/www/marine-weather
+cd /var/www/isewan-weather
 sudo ./deploy/update.sh
 ```
 
@@ -111,13 +111,13 @@ sudo ./deploy/update.sh
 
 1. **APIが応答しない**
 ```bash
-sudo systemctl status marine-weather
-sudo journalctl -u marine-weather -n 50
+sudo systemctl status isewan-weather
+sudo journalctl -u isewan-weather -n 50
 ```
 
 2. **データが更新されない**
 ```bash
-sudo tail -f /var/log/marine-weather-cron.log
+sudo tail -f /var/log/isewan-weather-cron.log
 sudo crontab -u www-data -l
 ```
 
@@ -139,9 +139,9 @@ sudo ufw allow 'Nginx Full'
 
 ### 定期バックアップ
 ```bash
-# /etc/cron.daily/marine-weather-backup
+# /etc/cron.daily/isewan-weather-backup
 #!/bin/bash
-cp /var/lib/marine-weather/weather_data.db /backup/weather_data_$(date +%Y%m%d).db
+cp /var/lib/isewan-weather/weather_data.db /backup/weather_data_$(date +%Y%m%d).db
 find /backup -name "weather_data_*.db" -mtime +30 -delete
 ```
 
@@ -149,8 +149,8 @@ find /backup -name "weather_data_*.db" -mtime +30 -delete
 
 ### ログローテーション
 ```bash
-# /etc/logrotate.d/marine-weather
-/var/log/marine-weather-cron.log {
+# /etc/logrotate.d/isewan-weather
+/var/log/isewan-weather-cron.log {
     daily
     rotate 7
     compress

@@ -1,5 +1,5 @@
-# 海洋気象データ自動取得 - 10分間隔
-*/10 * * * * cd /var/www/marine-weather/backend && /var/www/marine-weather/venv/bin/python scraper_cron.py >> /var/log/marine-weather-cron.log 2>&1
+# 伊勢湾気象データ自動取得 - 10分間隔
+*/10 * * * * cd /var/www/isewan-weather/backend && /var/www/isewan-weather/venv/bin/python scraper_cron.py >> /var/log/isewan-weather-cron.log 2>&1
 
 # ログローテーション - 毎日午前2時
-0 2 * * * find /var/log -name "marine-weather-*.log" -mtime +7 -delete
+0 2 * * * find /var/log -name "isewan-weather-*.log" -mtime +7 -delete
