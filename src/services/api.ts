@@ -1,6 +1,6 @@
 import { WeatherData, Station } from '../types/weather';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export class ApiService {
   private async fetchWithErrorHandling(url: string, options?: RequestInit): Promise<any> {

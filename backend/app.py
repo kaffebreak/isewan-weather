@@ -413,6 +413,7 @@ class WeatherAPIHandler(BaseHTTPRequestHandler):
     
     def do_OPTIONS(self):
         self.send_response(200)
+        # 本番環境では特定のドメインを指定することを推奨
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
@@ -421,6 +422,7 @@ class WeatherAPIHandler(BaseHTTPRequestHandler):
     def send_json_response(self, data, status_code=200):
         self.send_response(status_code)
         self.send_header('Content-Type', 'application/json')
+        # 本番環境では特定のドメインを指定することを推奨
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         self.wfile.write(json.dumps(data, ensure_ascii=False).encode('utf-8'))
@@ -508,4 +510,6 @@ def run_server(port=8000):
         httpd.shutdown()
 
 if __name__ == '__main__':
-    run_server()
+    import os
+    port = int(os.environ.get('PORT', 8000))
+    run_server(port)
