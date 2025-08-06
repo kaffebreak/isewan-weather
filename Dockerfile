@@ -1,6 +1,10 @@
 FROM node:18-alpine as frontend-builder
 
 WORKDIR /app
+
+# Copy environment file
+COPY .env ./
+
 COPY package*.json ./
 RUN npm ci
 COPY . .
