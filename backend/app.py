@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import threading
 import time
 import os
+from http.server import SimpleHTTPRequestHandler
 
 class HTMLTableParser:
     def __init__(self):
@@ -407,7 +408,7 @@ class WeatherScraper:
 
 class WeatherAPIHandler(BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
-        self.db = WeatherDatabase()
+        self.db = WeatherDatabase('/app/data/weather_data.db')
         self.scraper = WeatherScraper()
         super().__init__(*args, **kwargs)
     
@@ -456,6 +457,44 @@ class WeatherAPIHandler(BaseHTTPRequestHandler):
             elif path == '/api/stations':
                 self.send_json_response(self.scraper.stations)
                 
+            elif path.startswith('/static/'):
+                # 静的ファイルの配信
+                static_path = path[8:]  # Remove '/static/' prefix
+                if not static_path:
+                    static_path = 'index.html'
+                
+                file_path = os.path.join('/app/static', static_path)
+                if os.path.exists(file_path):
+                    if static_path.endswith('.html'):
+                        content_type = 'text/html'
+                    elif static_path.endswith('.js'):
+                        content_type = 'application/javascript'
+                    elif static_path.endswith('.css'):
+                        content_type = 'text/css'
+                    else:
+                        content_type = 'application/octet-stream'
+                    
+                    self.send_response(200)
+                    self.send_header('Content-Type', content_type)
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    
+                    with open(file_path, 'rb') as f:
+                        self.wfile.write(f.read())
+                else:
+                    # SPAのため、存在しないパスはindex.htmlを返す
+                    index_path = '/app/static/index.html'
+                    if os.path.exists(index_path):
+                        self.send_response(200)
+                        self.send_header('Content-Type', 'text/html')
+                        self.send_header('Access-Control-Allow-Origin', '*')
+                        self.end_headers()
+                        
+                        with open(index_path, 'rb') as f:
+                            self.wfile.write(f.read())
+                    else:
+                        self.send_json_response({'error': 'Not found'}, 404)
+                
             else:
                 self.send_json_response({'error': 'Not found'}, 404)
                 
@@ -492,16 +531,17 @@ class WeatherAPIHandler(BaseHTTPRequestHandler):
             self.send_json_response({'error': str(e)}, 500)
 
 def run_server(port=8000):
-    server_address = ('127.0.0.1', port)  # ローカルホストのみでリッスン（Nginxプロキシ用）
+    server_address = ('0.0.0.0', port)  # Docker環境では0.0.0.0でリッスン
     httpd = HTTPServer(server_address, WeatherAPIHandler)
     print(f"Starting Python weather API server on port {port}")
-    print(f"Database will be saved as: weather_data.db")
+    print(f"Database will be saved as: /app/data/weather_data.db")
     print("Available endpoints:")
     print("  GET  /api/weather/latest - Get latest data from all stations")
     print("  GET  /api/weather/data - Get weather data with optional filters")
     print("  GET  /api/weather/stats - Get database statistics")
     print("  GET  /api/stations - Get station information")
     print("  POST /api/weather/scrape - Scrape new data from all stations")
+    print("  GET  /static/ - Static files (frontend)")
     
     try:
         httpd.serve_forever()
@@ -511,6 +551,11 @@ def run_server(port=8000):
 
 if __name__ == '__main__':
     import os
-    # 本番環境では8000番ポートを使用
+    # Docker環境では8000番ポートを使用
     port = int(os.environ.get('PORT', 8000))
+    
+    # データディレクトリを作成
+    os.makedirs('/app/data', exist_ok=True)
+    os.makedirs('/app/logs', exist_ok=True)
+    
     run_server(port)

@@ -15,7 +15,7 @@ def main():
     print(f"[{datetime.now()}] Starting scheduled weather data scraping...")
     
     try:
-        db = WeatherDatabase()
+        db = WeatherDatabase('/app/data/weather_data.db')
         scraper = WeatherScraper()
         
         # Get latest data from database to check for updates
