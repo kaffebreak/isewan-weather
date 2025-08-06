@@ -1,0 +1,15 @@
+[Unit]
+Description=Marine Weather API Server
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/marine-weather/backend
+Environment=PATH=/var/www/marine-weather/venv/bin
+ExecStart=/var/www/marine-weather/venv/bin/python app.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

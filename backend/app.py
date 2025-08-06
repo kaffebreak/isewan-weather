@@ -492,7 +492,7 @@ class WeatherAPIHandler(BaseHTTPRequestHandler):
             self.send_json_response({'error': str(e)}, 500)
 
 def run_server(port=8000):
-    server_address = ('', port)
+    server_address = ('127.0.0.1', port)  # ローカルホストのみでリッスン（Nginxプロキシ用）
     httpd = HTTPServer(server_address, WeatherAPIHandler)
     print(f"Starting Python weather API server on port {port}")
     print(f"Database will be saved as: weather_data.db")
@@ -511,5 +511,6 @@ def run_server(port=8000):
 
 if __name__ == '__main__':
     import os
+    # 本番環境では8000番ポートを使用
     port = int(os.environ.get('PORT', 8000))
     run_server(port)
