@@ -8,28 +8,20 @@ interface DateTimeSelectorProps {
   onEndDateChange: (date: string) => void;
 }
 
-interface DateTimeComponents {
-  year: string;
-  month: string;
-  day: string;
-  hour: string;
-  minute: string;
-}
-
 export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   startDate,
   endDate,
   onStartDateChange,
   onEndDateChange
 }) => {
-  // UTC文字列を日本時間の各コンポーネントに分解
-  const parseUTCToJSTComponents = (utcString: string): DateTimeComponents => {
+  // UTC文字列を日本時間の年月日（YYYYMMDD）と時分に分解
+  const parseUTCToJSTComponents = (utcString: string): { dateStr: string; hour: string; minute: string } => {
     if (!utcString) {
       const now = new Date();
       return {
-        year: now.getFullYear().toString(),
-        month: (now.getMonth() + 1).toString().padStart(2, '0'),
-        day: now.getDate().toString().padStart(2, '0'),
+        dateStr: now.getFullYear().toString() + 
+                (now.getMonth() + 1).toString().padStart(2, '0') + 
+                now.getDate().toString().padStart(2, '0'),
         hour: now.getHours().toString().padStart(2, '0'),
         minute: now.getMinutes().toString().padStart(2, '0')
       };
@@ -41,9 +33,9 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
       const jstDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000);
       
       return {
-        year: jstDate.getUTCFullYear().toString(),
-        month: (jstDate.getUTCMonth() + 1).toString().padStart(2, '0'),
-        day: jstDate.getUTCDate().toString().padStart(2, '0'),
+        dateStr: jstDate.getUTCFullYear().toString() + 
+                (jstDate.getUTCMonth() + 1).toString().padStart(2, '0') + 
+                jstDate.getUTCDate().toString().padStart(2, '0'),
         hour: jstDate.getUTCHours().toString().padStart(2, '0'),
         minute: jstDate.getUTCMinutes().toString().padStart(2, '0')
       };
@@ -51,38 +43,39 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
       console.error('Error parsing UTC to JST components:', error);
       const now = new Date();
       return {
-        year: now.getFullYear().toString(),
-        month: (now.getMonth() + 1).toString().padStart(2, '0'),
-        day: now.getDate().toString().padStart(2, '0'),
+        dateStr: now.getFullYear().toString() + 
+                (now.getMonth() + 1).toString().padStart(2, '0') + 
+                now.getDate().toString().padStart(2, '0'),
         hour: now.getHours().toString().padStart(2, '0'),
         minute: now.getMinutes().toString().padStart(2, '0')
       };
     }
   };
 
-  // 各コンポーネントからUTC文字列を作成
-  const componentsToUTC = (components: DateTimeComponents): string => {
+  // 年月日文字列（YYYYMMDD）と時分からUTC文字列を作成
+  const componentsToUTC = (dateStr: string, hour: string, minute: string): string => {
     try {
-      const { year, month, day, hour, minute } = components;
+      // YYYYMMDD形式をパース
+      if (dateStr.length !== 8) return '';
       
-      // 入力値の検証
-      const yearNum = parseInt(year);
-      const monthNum = parseInt(month);
-      const dayNum = parseInt(day);
+      const year = parseInt(dateStr.substring(0, 4));
+      const month = parseInt(dateStr.substring(4, 6));
+      const day = parseInt(dateStr.substring(6, 8));
       const hourNum = parseInt(hour);
       const minuteNum = parseInt(minute);
       
-      if (isNaN(yearNum) || isNaN(monthNum) || isNaN(dayNum) || isNaN(hourNum) || isNaN(minuteNum)) {
+      // 入力値の検証
+      if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hourNum) || isNaN(minuteNum)) {
         return '';
       }
       
-      if (monthNum < 1 || monthNum > 12 || dayNum < 1 || dayNum > 31 || 
+      if (year < 2020 || year > 2030 || month < 1 || month > 12 || day < 1 || day > 31 || 
           hourNum < 0 || hourNum > 23 || minuteNum < 0 || minuteNum > 59) {
         return '';
       }
       
       // 日本時間として日付を作成
-      const jstDate = new Date(yearNum, monthNum - 1, dayNum, hourNum, minuteNum);
+      const jstDate = new Date(year, month - 1, day, hourNum, minuteNum);
       
       // UTCに変換（-9時間）
       const utcDate = new Date(jstDate.getTime() - 9 * 60 * 60 * 1000);
@@ -117,23 +110,86 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
 
   const validationError = validateDateRange();
 
-  const handleStartComponentChange = (field: keyof DateTimeComponents, value: string) => {
-    const newComponents = { ...startComponents, [field]: value };
-    const utcString = componentsToUTC(newComponents);
+  // 年月日の入力値検証
+  const validateDateString = (dateStr: string): boolean => {
+    if (dateStr.length !== 8) return false;
+    const year = parseInt(dateStr.substring(0, 4));
+    const month = parseInt(dateStr.substring(4, 6));
+    const day = parseInt(dateStr.substring(6, 8));
+    
+    return year >= 2020 && year <= 2030 && month >= 1 && month <= 12 && day >= 1 && day <= 31;
+  };
+
+  const handleStartDateChange = (dateStr: string) => {
+    if (validateDateString(dateStr)) {
+      const utcString = componentsToUTC(dateStr, startComponents.hour, startComponents.minute);
+      if (utcString) {
+        onStartDateChange(utcString);
+      }
+    }
+  };
+
+  const handleStartTimeChange = (field: 'hour' | 'minute', value: string) => {
+    const utcString = componentsToUTC(
+      startComponents.dateStr, 
+      field === 'hour' ? value : startComponents.hour,
+      field === 'minute' ? value : startComponents.minute
+    );
     if (utcString) {
       onStartDateChange(utcString);
     }
   };
 
-  const handleEndComponentChange = (field: keyof DateTimeComponents, value: string) => {
-    const newComponents = { ...endComponents, [field]: value };
-    const utcString = componentsToUTC(newComponents);
+  const handleEndDateChange = (dateStr: string) => {
+    if (validateDateString(dateStr)) {
+      const utcString = componentsToUTC(dateStr, endComponents.hour, endComponents.minute);
+      if (utcString) {
+        onEndDateChange(utcString);
+      }
+    }
+  };
+
+  const handleEndTimeChange = (field: 'hour' | 'minute', value: string) => {
+    const utcString = componentsToUTC(
+      endComponents.dateStr, 
+      field === 'hour' ? value : endComponents.hour,
+      field === 'minute' ? value : endComponents.minute
+    );
     if (utcString) {
       onEndDateChange(utcString);
     }
   };
 
-  const inputClassName = "w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500";
+  // 時間のオプション生成
+  const generateHourOptions = () => {
+    const options = [];
+    for (let i = 0; i < 24; i++) {
+      const value = i.toString().padStart(2, '0');
+      options.push(
+        <option key={value} value={value}>
+          {value}時
+        </option>
+      );
+    }
+    return options;
+  };
+
+  // 分のオプション生成
+  const generateMinuteOptions = () => {
+    const options = [];
+    for (let i = 0; i < 60; i += 5) { // 5分刻み
+      const value = i.toString().padStart(2, '0');
+      options.push(
+        <option key={value} value={value}>
+          {value}分
+        </option>
+      );
+    }
+    return options;
+  };
+
+  const inputClassName = "px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500";
+  const selectClassName = "px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white";
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
@@ -149,79 +205,33 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
             <Clock className="w-4 h-4 inline mr-1" />
             開始日時（JST）
           </label>
-          <div className="flex gap-4">
-            {/* 年月日 */}
+          <div className="flex gap-4 items-center">
             <div className="flex-1">
-              <div className="text-xs text-gray-500 mb-1">年月日</div>
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <input
-                    type="number"
-                    value={startComponents.year}
-                    onChange={(e) => handleStartComponentChange('year', e.target.value)}
-                    placeholder="2025"
-                    min="2020"
-                    max="2030"
-                    className={inputClassName}
-                  />
-                  <div className="text-xs text-gray-400 text-center mt-1">年</div>
-                </div>
-                <div>
-                  <input
-                    type="number"
-                    value={startComponents.month}
-                    onChange={(e) => handleStartComponentChange('month', e.target.value.padStart(2, '0'))}
-                    placeholder="01"
-                    min="1"
-                    max="12"
-                    className={inputClassName}
-                  />
-                  <div className="text-xs text-gray-400 text-center mt-1">月</div>
-                </div>
-                <div>
-                  <input
-                    type="number"
-                    value={startComponents.day}
-                    onChange={(e) => handleStartComponentChange('day', e.target.value.padStart(2, '0'))}
-                    placeholder="15"
-                    min="1"
-                    max="31"
-                    className={inputClassName}
-                  />
-                  <div className="text-xs text-gray-400 text-center mt-1">日</div>
-                </div>
-              </div>
+              <input
+                type="text"
+                value={startComponents.dateStr}
+                onChange={(e) => handleStartDateChange(e.target.value)}
+                placeholder="20250115"
+                maxLength={8}
+                className={`${inputClassName} w-full text-center`}
+              />
+              <div className="text-xs text-gray-400 text-center mt-1">年月日（YYYYMMDD）</div>
             </div>
-            
-            {/* 時分 */}
-            <div className="flex-1">
-              <div className="text-xs text-gray-500 mb-1">時刻</div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <input
-                    type="number"
-                    value={startComponents.hour}
-                    onChange={(e) => handleStartComponentChange('hour', e.target.value.padStart(2, '0'))}
-                    placeholder="14"
-                    min="0"
-                    max="23"
-                    className={inputClassName}
-                  />
-                  <div className="text-xs text-gray-400 text-center mt-1">時</div>
-                </div>
-                <div>
-                  <input
-                    type="number"
-                    value={startComponents.minute}
-                    onChange={(e) => handleStartComponentChange('minute', e.target.value.padStart(2, '0'))}
-                    placeholder="30"
-                    min="0"
-                    max="59"
-                    className={inputClassName}
-                  />
-                  <div className="text-xs text-gray-400 text-center mt-1">分</div>
-                </div>
-              </div>
+            <div className="flex gap-2">
+              <select
+                value={startComponents.hour}
+                onChange={(e) => handleStartTimeChange('hour', e.target.value)}
+                className={selectClassName}
+              >
+                {generateHourOptions()}
+              </select>
+              <select
+                value={startComponents.minute}
+                onChange={(e) => handleStartTimeChange('minute', e.target.value)}
+                className={selectClassName}
+              >
+                {generateMinuteOptions()}
+              </select>
             </div>
           </div>
         </div>
@@ -232,79 +242,33 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
             <Clock className="w-4 h-4 inline mr-1" />
             終了日時（JST）
           </label>
-          <div className="flex gap-4">
-            {/* 年月日 */}
+          <div className="flex gap-4 items-center">
             <div className="flex-1">
-              <div className="text-xs text-gray-500 mb-1">年月日</div>
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <input
-                    type="number"
-                    value={endComponents.year}
-                    onChange={(e) => handleEndComponentChange('year', e.target.value)}
-                    placeholder="2025"
-                    min="2020"
-                    max="2030"
-                    className={inputClassName}
-                  />
-                  <div className="text-xs text-gray-400 text-center mt-1">年</div>
-                </div>
-                <div>
-                  <input
-                    type="number"
-                    value={endComponents.month}
-                    onChange={(e) => handleEndComponentChange('month', e.target.value.padStart(2, '0'))}
-                    placeholder="01"
-                    min="1"
-                    max="12"
-                    className={inputClassName}
-                  />
-                  <div className="text-xs text-gray-400 text-center mt-1">月</div>
-                </div>
-                <div>
-                  <input
-                    type="number"
-                    value={endComponents.day}
-                    onChange={(e) => handleEndComponentChange('day', e.target.value.padStart(2, '0'))}
-                    placeholder="15"
-                    min="1"
-                    max="31"
-                    className={inputClassName}
-                  />
-                  <div className="text-xs text-gray-400 text-center mt-1">日</div>
-                </div>
-              </div>
+              <input
+                type="text"
+                value={endComponents.dateStr}
+                onChange={(e) => handleEndDateChange(e.target.value)}
+                placeholder="20250115"
+                maxLength={8}
+                className={`${inputClassName} w-full text-center`}
+              />
+              <div className="text-xs text-gray-400 text-center mt-1">年月日（YYYYMMDD）</div>
             </div>
-            
-            {/* 時分 */}
-            <div className="flex-1">
-              <div className="text-xs text-gray-500 mb-1">時刻</div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <input
-                    type="number"
-                    value={endComponents.hour}
-                    onChange={(e) => handleEndComponentChange('hour', e.target.value.padStart(2, '0'))}
-                    placeholder="15"
-                    min="0"
-                    max="23"
-                    className={inputClassName}
-                  />
-                  <div className="text-xs text-gray-400 text-center mt-1">時</div>
-                </div>
-                <div>
-                  <input
-                    type="number"
-                    value={endComponents.minute}
-                    onChange={(e) => handleEndComponentChange('minute', e.target.value.padStart(2, '0'))}
-                    placeholder="30"
-                    min="0"
-                    max="59"
-                    className={inputClassName}
-                  />
-                  <div className="text-xs text-gray-400 text-center mt-1">分</div>
-                </div>
-              </div>
+            <div className="flex gap-2">
+              <select
+                value={endComponents.hour}
+                onChange={(e) => handleEndTimeChange('hour', e.target.value)}
+                className={selectClassName}
+              >
+                {generateHourOptions()}
+              </select>
+              <select
+                value={endComponents.minute}
+                onChange={(e) => handleEndTimeChange('minute', e.target.value)}
+                className={selectClassName}
+              >
+                {generateMinuteOptions()}
+              </select>
             </div>
           </div>
         </div>
@@ -321,7 +285,7 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
       )}
       
       <div className="mt-4 text-sm text-gray-500">
-        ※ 入力された時刻は日本標準時（JST）として処理されます
+        ※ 年月日は8桁で入力（例：20250115）、時分はプルダウンで選択
       </div>
     </div>
   );
