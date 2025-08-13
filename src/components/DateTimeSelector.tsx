@@ -149,66 +149,79 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
             <Clock className="w-4 h-4 inline mr-1" />
             開始日時（JST）
           </label>
-          <div className="grid grid-cols-5 gap-2 items-center">
-            <div>
-              <input
-                type="number"
-                value={startComponents.year}
-                onChange={(e) => handleStartComponentChange('year', e.target.value)}
-                placeholder="2025"
-                min="2020"
-                max="2030"
-                className={inputClassName}
-              />
-              <div className="text-xs text-gray-500 text-center mt-1">年</div>
+          <div className="flex gap-4">
+            {/* 年月日 */}
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 mb-1">年月日</div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <input
+                    type="number"
+                    value={startComponents.year}
+                    onChange={(e) => handleStartComponentChange('year', e.target.value)}
+                    placeholder="2025"
+                    min="2020"
+                    max="2030"
+                    className={inputClassName}
+                  />
+                  <div className="text-xs text-gray-400 text-center mt-1">年</div>
+                </div>
+                <div>
+                  <input
+                    type="number"
+                    value={startComponents.month}
+                    onChange={(e) => handleStartComponentChange('month', e.target.value.padStart(2, '0'))}
+                    placeholder="01"
+                    min="1"
+                    max="12"
+                    className={inputClassName}
+                  />
+                  <div className="text-xs text-gray-400 text-center mt-1">月</div>
+                </div>
+                <div>
+                  <input
+                    type="number"
+                    value={startComponents.day}
+                    onChange={(e) => handleStartComponentChange('day', e.target.value.padStart(2, '0'))}
+                    placeholder="15"
+                    min="1"
+                    max="31"
+                    className={inputClassName}
+                  />
+                  <div className="text-xs text-gray-400 text-center mt-1">日</div>
+                </div>
+              </div>
             </div>
-            <div>
-              <input
-                type="number"
-                value={startComponents.month}
-                onChange={(e) => handleStartComponentChange('month', e.target.value.padStart(2, '0'))}
-                placeholder="01"
-                min="1"
-                max="12"
-                className={inputClassName}
-              />
-              <div className="text-xs text-gray-500 text-center mt-1">月</div>
-            </div>
-            <div>
-              <input
-                type="number"
-                value={startComponents.day}
-                onChange={(e) => handleStartComponentChange('day', e.target.value.padStart(2, '0'))}
-                placeholder="15"
-                min="1"
-                max="31"
-                className={inputClassName}
-              />
-              <div className="text-xs text-gray-500 text-center mt-1">日</div>
-            </div>
-            <div>
-              <input
-                type="number"
-                value={startComponents.hour}
-                onChange={(e) => handleStartComponentChange('hour', e.target.value.padStart(2, '0'))}
-                placeholder="14"
-                min="0"
-                max="23"
-                className={inputClassName}
-              />
-              <div className="text-xs text-gray-500 text-center mt-1">時</div>
-            </div>
-            <div>
-              <input
-                type="number"
-                value={startComponents.minute}
-                onChange={(e) => handleStartComponentChange('minute', e.target.value.padStart(2, '0'))}
-                placeholder="30"
-                min="0"
-                max="59"
-                className={inputClassName}
-              />
-              <div className="text-xs text-gray-500 text-center mt-1">分</div>
+            
+            {/* 時分 */}
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 mb-1">時刻</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <input
+                    type="number"
+                    value={startComponents.hour}
+                    onChange={(e) => handleStartComponentChange('hour', e.target.value.padStart(2, '0'))}
+                    placeholder="14"
+                    min="0"
+                    max="23"
+                    className={inputClassName}
+                  />
+                  <div className="text-xs text-gray-400 text-center mt-1">時</div>
+                </div>
+                <div>
+                  <input
+                    type="number"
+                    value={startComponents.minute}
+                    onChange={(e) => handleStartComponentChange('minute', e.target.value.padStart(2, '0'))}
+                    placeholder="30"
+                    min="0"
+                    max="59"
+                    className={inputClassName}
+                  />
+                  <div className="text-xs text-gray-400 text-center mt-1">分</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -219,66 +232,79 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
             <Clock className="w-4 h-4 inline mr-1" />
             終了日時（JST）
           </label>
-          <div className="grid grid-cols-5 gap-2 items-center">
-            <div>
-              <input
-                type="number"
-                value={endComponents.year}
-                onChange={(e) => handleEndComponentChange('year', e.target.value)}
-                placeholder="2025"
-                min="2020"
-                max="2030"
-                className={inputClassName}
-              />
-              <div className="text-xs text-gray-500 text-center mt-1">年</div>
+          <div className="flex gap-4">
+            {/* 年月日 */}
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 mb-1">年月日</div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <input
+                    type="number"
+                    value={endComponents.year}
+                    onChange={(e) => handleEndComponentChange('year', e.target.value)}
+                    placeholder="2025"
+                    min="2020"
+                    max="2030"
+                    className={inputClassName}
+                  />
+                  <div className="text-xs text-gray-400 text-center mt-1">年</div>
+                </div>
+                <div>
+                  <input
+                    type="number"
+                    value={endComponents.month}
+                    onChange={(e) => handleEndComponentChange('month', e.target.value.padStart(2, '0'))}
+                    placeholder="01"
+                    min="1"
+                    max="12"
+                    className={inputClassName}
+                  />
+                  <div className="text-xs text-gray-400 text-center mt-1">月</div>
+                </div>
+                <div>
+                  <input
+                    type="number"
+                    value={endComponents.day}
+                    onChange={(e) => handleEndComponentChange('day', e.target.value.padStart(2, '0'))}
+                    placeholder="15"
+                    min="1"
+                    max="31"
+                    className={inputClassName}
+                  />
+                  <div className="text-xs text-gray-400 text-center mt-1">日</div>
+                </div>
+              </div>
             </div>
-            <div>
-              <input
-                type="number"
-                value={endComponents.month}
-                onChange={(e) => handleEndComponentChange('month', e.target.value.padStart(2, '0'))}
-                placeholder="01"
-                min="1"
-                max="12"
-                className={inputClassName}
-              />
-              <div className="text-xs text-gray-500 text-center mt-1">月</div>
-            </div>
-            <div>
-              <input
-                type="number"
-                value={endComponents.day}
-                onChange={(e) => handleEndComponentChange('day', e.target.value.padStart(2, '0'))}
-                placeholder="15"
-                min="1"
-                max="31"
-                className={inputClassName}
-              />
-              <div className="text-xs text-gray-500 text-center mt-1">日</div>
-            </div>
-            <div>
-              <input
-                type="number"
-                value={endComponents.hour}
-                onChange={(e) => handleEndComponentChange('hour', e.target.value.padStart(2, '0'))}
-                placeholder="15"
-                min="0"
-                max="23"
-                className={inputClassName}
-              />
-              <div className="text-xs text-gray-500 text-center mt-1">時</div>
-            </div>
-            <div>
-              <input
-                type="number"
-                value={endComponents.minute}
-                onChange={(e) => handleEndComponentChange('minute', e.target.value.padStart(2, '0'))}
-                placeholder="30"
-                min="0"
-                max="59"
-                className={inputClassName}
-              />
-              <div className="text-xs text-gray-500 text-center mt-1">分</div>
+            
+            {/* 時分 */}
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 mb-1">時刻</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <input
+                    type="number"
+                    value={endComponents.hour}
+                    onChange={(e) => handleEndComponentChange('hour', e.target.value.padStart(2, '0'))}
+                    placeholder="15"
+                    min="0"
+                    max="23"
+                    className={inputClassName}
+                  />
+                  <div className="text-xs text-gray-400 text-center mt-1">時</div>
+                </div>
+                <div>
+                  <input
+                    type="number"
+                    value={endComponents.minute}
+                    onChange={(e) => handleEndComponentChange('minute', e.target.value.padStart(2, '0'))}
+                    placeholder="30"
+                    min="0"
+                    max="59"
+                    className={inputClassName}
+                  />
+                  <div className="text-xs text-gray-400 text-center mt-1">分</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
