@@ -14,60 +14,18 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   onStartDateChange,
   onEndDateChange
 }) => {
-  // UTC文字列を日本時間の年月日（YYYYMMDD）と時分に分解
-  const parseUTCToJSTComponents = (utcString: string): { dateStr: string; hour: string; minute: string } => {
-    if (!utcString) {
-      return {
-        dateStr: '', // 空文字列でブランク状態
-        hour: '00',
-        minute: '00'
-      };
-    }
+  // 日付文字列（YYYYMMDD）と時分からUTC文字列を作成
+  const componentsToUTC = (dateStr: string, hour: string, minute: string): string => {
+    if (!dateStr || dateStr.length !== 8) return '';
     
     try {
-      const utcDate = new Date(utcString);
-      // 日本時間に変換（UTC+9時間）
-      const jstDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000);
-      
-      return {
-        dateStr: jstDate.getUTCFullYear().toString() + 
-                (jstDate.getUTCMonth() + 1).toString().padStart(2, '0') + 
-                jstDate.getUTCDate().toString().padStart(2, '0'),
-        hour: jstDate.getUTCHours().toString().padStart(2, '0'),
-        minute: jstDate.getUTCMinutes().toString().padStart(2, '0')
-      };
-    } catch (error) {
-      console.error('Error parsing UTC to JST components:', error);
-      const now = new Date();
-      return {
-        dateStr: now.getFullYear().toString() + 
-                (now.getMonth() + 1).toString().padStart(2, '0') + 
-                now.getDate().toString().padStart(2, '0'),
-        hour: now.getHours().toString().padStart(2, '0'),
-        minute: now.getMinutes().toString().padStart(2, '0')
-      };
-    }
-  };
-
-  // 年月日文字列（YYYYMMDD）と時分からUTC文字列を作成
-  const componentsToUTC = (dateStr: string, hour: string, minute: string): string => {
-    try {
-      // YYYYMMDD形式をパース
-      if (!dateStr || dateStr.length !== 8) return '';
-      
       const year = parseInt(dateStr.substring(0, 4));
       const month = parseInt(dateStr.substring(4, 6));
       const day = parseInt(dateStr.substring(6, 8));
       const hourNum = parseInt(hour);
       const minuteNum = parseInt(minute);
       
-      // 入力値の検証
       if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hourNum) || isNaN(minuteNum)) {
-        return '';
-      }
-      
-      if (year < 2020 || year > 2030 || month < 1 || month > 12 || day < 1 || day > 31 || 
-          hourNum < 0 || hourNum > 23 || minuteNum < 0 || minuteNum > 59) {
         return '';
       }
       
@@ -79,15 +37,40 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
       
       return utcDate.toISOString().slice(0, 19);
     } catch (error) {
-      console.error('Error converting components to UTC:', error);
       return '';
     }
   };
 
-  const startComponents = parseUTCToJSTComponents(startDate);
-  const endComponents = parseUTCToJSTComponents(endDate);
+  // UTC文字列から日付文字列と時分を取得
+  const parseUTCToComponents = (utcString: string): { dateStr: string; hour: string; minute: string } => {
+    if (!utcString) {
+      return { dateStr: '', hour: '00', minute: '00' };
+    }
+    
+    try {
+      const utcDate = new Date(utcString);
+      const jstDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000);
+      
+      const year = jstDate.getUTCFullYear();
+      const month = (jstDate.getUTCMonth() + 1).toString().padStart(2, '0');
+      const day = jstDate.getUTCDate().toString().padStart(2, '0');
+      const hour = jstDate.getUTCHours().toString().padStart(2, '0');
+      const minute = jstDate.getUTCMinutes().toString().padStart(2, '0');
+      
+      return {
+        dateStr: `${year}${month}${day}`,
+        hour,
+        minute
+      };
+    } catch (error) {
+      return { dateStr: '', hour: '00', minute: '00' };
+    }
+  };
 
-  // バリデーション：開始時間が終了時間より未来かチェック
+  const startComponents = parseUTCToComponents(startDate);
+  const endComponents = parseUTCToComponents(endDate);
+
+  // バリデーション
   const validateDateRange = (): string | null => {
     if (!startDate || !endDate) return null;
     
@@ -107,61 +90,6 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
 
   const validationError = validateDateRange();
 
-  // 年月日の入力値検証
-  const validateDateString = (dateStr: string): boolean => {
-    if (!dateStr) return true; // 空文字列は有効（ブランク状態）
-    if (dateStr.length !== 8) return false;
-    const year = parseInt(dateStr.substring(0, 4));
-    const month = parseInt(dateStr.substring(4, 6));
-    const day = parseInt(dateStr.substring(6, 8));
-    
-    return year >= 2020 && year <= 2030 && month >= 1 && month <= 12 && day >= 1 && day <= 31;
-  };
-
-  const handleStartDateChange = (dateStr: string) => {
-    if (!dateStr) {
-      onStartDateChange(''); // 空文字列の場合はそのまま設定
-    } else if (validateDateString(dateStr)) {
-      const utcString = componentsToUTC(dateStr, startComponents.hour, startComponents.minute);
-      if (utcString) {
-        onStartDateChange(utcString);
-      }
-    }
-  };
-
-  const handleStartTimeChange = (field: 'hour' | 'minute', value: string) => {
-    const utcString = componentsToUTC(
-      startComponents.dateStr, 
-      field === 'hour' ? value : startComponents.hour,
-      field === 'minute' ? value : startComponents.minute
-    );
-    if (utcString) {
-      onStartDateChange(utcString);
-    }
-  };
-
-  const handleEndDateChange = (dateStr: string) => {
-    if (!dateStr) {
-      onEndDateChange(''); // 空文字列の場合はそのまま設定
-    } else if (validateDateString(dateStr)) {
-      const utcString = componentsToUTC(dateStr, endComponents.hour, endComponents.minute);
-      if (utcString) {
-        onEndDateChange(utcString);
-      }
-    }
-  };
-
-  const handleEndTimeChange = (field: 'hour' | 'minute', value: string) => {
-    const utcString = componentsToUTC(
-      endComponents.dateStr, 
-      field === 'hour' ? value : endComponents.hour,
-      field === 'minute' ? value : endComponents.minute
-    );
-    if (utcString) {
-      onEndDateChange(utcString);
-    }
-  };
-
   // 時間のオプション生成
   const generateHourOptions = () => {
     const options = [];
@@ -179,7 +107,7 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   // 分のオプション生成
   const generateMinuteOptions = () => {
     const options = [];
-    for (let i = 0; i < 60; i += 5) { // 5分刻み
+    for (let i = 0; i < 60; i += 5) {
       const value = i.toString().padStart(2, '0');
       options.push(
         <option key={value} value={value}>
@@ -190,8 +118,33 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
     return options;
   };
 
-  const inputClassName = "px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500";
-  const selectClassName = "px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white";
+  const handleStartDateChange = (dateStr: string) => {
+    const utcString = componentsToUTC(dateStr, startComponents.hour, startComponents.minute);
+    onStartDateChange(utcString);
+  };
+
+  const handleStartTimeChange = (field: 'hour' | 'minute', value: string) => {
+    const utcString = componentsToUTC(
+      startComponents.dateStr, 
+      field === 'hour' ? value : startComponents.hour,
+      field === 'minute' ? value : startComponents.minute
+    );
+    onStartDateChange(utcString);
+  };
+
+  const handleEndDateChange = (dateStr: string) => {
+    const utcString = componentsToUTC(dateStr, endComponents.hour, endComponents.minute);
+    onEndDateChange(utcString);
+  };
+
+  const handleEndTimeChange = (field: 'hour' | 'minute', value: string) => {
+    const utcString = componentsToUTC(
+      endComponents.dateStr, 
+      field === 'hour' ? value : endComponents.hour,
+      field === 'minute' ? value : endComponents.minute
+    );
+    onEndDateChange(utcString);
+  };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
@@ -215,7 +168,7 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
                 onChange={(e) => handleStartDateChange(e.target.value)}
                 placeholder="20250115"
                 maxLength={8}
-                className={`${inputClassName} w-full text-center`}
+                className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full text-center"
               />
               <div className="text-xs text-gray-400 text-center mt-1">年月日（YYYYMMDD）</div>
             </div>
@@ -223,14 +176,14 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
               <select
                 value={startComponents.hour}
                 onChange={(e) => handleStartTimeChange('hour', e.target.value)}
-                className={selectClassName}
+                className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               >
                 {generateHourOptions()}
               </select>
               <select
                 value={startComponents.minute}
                 onChange={(e) => handleStartTimeChange('minute', e.target.value)}
-                className={selectClassName}
+                className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               >
                 {generateMinuteOptions()}
               </select>
@@ -252,7 +205,7 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
                 onChange={(e) => handleEndDateChange(e.target.value)}
                 placeholder="20250115"
                 maxLength={8}
-                className={`${inputClassName} w-full text-center`}
+                className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full text-center"
               />
               <div className="text-xs text-gray-400 text-center mt-1">年月日（YYYYMMDD）</div>
             </div>
@@ -260,14 +213,14 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
               <select
                 value={endComponents.hour}
                 onChange={(e) => handleEndTimeChange('hour', e.target.value)}
-                className={selectClassName}
+                className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               >
                 {generateHourOptions()}
               </select>
               <select
                 value={endComponents.minute}
                 onChange={(e) => handleEndTimeChange('minute', e.target.value)}
-                className={selectClassName}
+                className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               >
                 {generateMinuteOptions()}
               </select>
