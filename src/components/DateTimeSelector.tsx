@@ -18,7 +18,7 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   const parseUTCToJSTComponents = (utcString: string): { dateStr: string; hour: string; minute: string } => {
     if (!utcString) {
       return {
-        dateStr: '00000000', // ブランク状態を示すマーカー
+        dateStr: '', // 空文字列でブランク状態
         hour: '00',
         minute: '00'
       };
@@ -53,7 +53,7 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   const componentsToUTC = (dateStr: string, hour: string, minute: string): string => {
     try {
       // YYYYMMDD形式をパース
-      if (dateStr.length !== 8) return '';
+      if (!dateStr || dateStr.length !== 8) return '';
       
       const year = parseInt(dateStr.substring(0, 4));
       const month = parseInt(dateStr.substring(4, 6));
@@ -109,6 +109,7 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
 
   // 年月日の入力値検証
   const validateDateString = (dateStr: string): boolean => {
+    if (!dateStr) return true; // 空文字列は有効（ブランク状態）
     if (dateStr.length !== 8) return false;
     const year = parseInt(dateStr.substring(0, 4));
     const month = parseInt(dateStr.substring(4, 6));
@@ -118,7 +119,9 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   };
 
   const handleStartDateChange = (dateStr: string) => {
-    if (validateDateString(dateStr)) {
+    if (!dateStr) {
+      onStartDateChange(''); // 空文字列の場合はそのまま設定
+    } else if (validateDateString(dateStr)) {
       const utcString = componentsToUTC(dateStr, startComponents.hour, startComponents.minute);
       if (utcString) {
         onStartDateChange(utcString);
@@ -138,7 +141,9 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   };
 
   const handleEndDateChange = (dateStr: string) => {
-    if (validateDateString(dateStr)) {
+    if (!dateStr) {
+      onEndDateChange(''); // 空文字列の場合はそのまま設定
+    } else if (validateDateString(dateStr)) {
       const utcString = componentsToUTC(dateStr, endComponents.hour, endComponents.minute);
       if (utcString) {
         onEndDateChange(utcString);

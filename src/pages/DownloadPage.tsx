@@ -16,13 +16,9 @@ export const DownloadPage: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
-    // Set default date range (last 24 hours)
-    const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    
-    // UTC時刻として設定（APIはUTCで処理）
-    setStartDate(yesterday.toISOString().slice(0, 19));
-    setEndDate(now.toISOString().slice(0, 19));
+    // 初期状態は空文字列（ブランク）
+    setStartDate('');
+    setEndDate('');
   }, []);
 
   useEffect(() => {
