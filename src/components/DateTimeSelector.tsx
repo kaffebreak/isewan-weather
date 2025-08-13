@@ -14,8 +14,8 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   onStartDateChange,
   onEndDateChange
 }) => {
-  // UTC文字列を日本時間のdatetime-local形式に変換
-  const utcToJSTLocal = (utcString: string): string => {
+  // UTC文字列を日本時間の表示用文字列に変換
+  const utcToJSTDisplay = (utcString: string): string => {
     if (!utcString) return '';
     
     try {
@@ -23,27 +23,46 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
       // 日本時間に変換（UTC+9時間）
       const jstDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000);
       
-      // datetime-local形式に変換（YYYY-MM-DDTHH:mm）
-      return jstDate.toISOString().slice(0, 16);
+      // YYYY-MM-DD HH:mm形式に変換
+      const year = jstDate.getUTCFullYear();
+      const month = String(jstDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(jstDate.getUTCDate()).padStart(2, '0');
+      const hours = String(jstDate.getUTCHours()).padStart(2, '0');
+      const minutes = String(jstDate.getUTCMinutes()).padStart(2, '0');
+      
+      return `${year}-${month}-${day} ${hours}:${minutes}`;
     } catch (error) {
-      console.error('Error converting UTC to JST:', error);
+      console.error('Error converting UTC to JST display:', error);
       return '';
     }
   };
 
-  // 日本時間のdatetime-local形式をUTC文字列に変換
-  const jstLocalToUTC = (jstLocalString: string): string => {
-    if (!jstLocalString) return '';
+  // 日本時間の表示用文字列をUTC文字列に変換
+  const jstDisplayToUTC = (jstDisplayString: string): string => {
+    if (!jstDisplayString) return '';
     
     try {
-      // datetime-local値をそのままDateオブジェクトに変換（ローカル時間として扱われる）
-      const localDate = new Date(jstLocalString);
-      // 日本時間からUTCに変換（-9時間）
-      const utcDate = new Date(localDate.getTime() - 9 * 60 * 60 * 1000);
+      // YYYY-MM-DD HH:mm形式をパース
+      const match = jstDisplayString.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})$/);
+      if (!match) return '';
+      
+      const [, year, month, day, hours, minutes] = match;
+      
+      // 日本時間として日付を作成
+      const jstDate = new Date(
+        parseInt(year),
+        parseInt(month) - 1,
+        parseInt(day),
+        parseInt(hours),
+        parseInt(minutes)
+      );
+      
+      // UTCに変換（-9時間）
+      const utcDate = new Date(jstDate.getTime() - 9 * 60 * 60 * 1000);
       
       return utcDate.toISOString().slice(0, 19);
     } catch (error) {
-      console.error('Error converting JST to UTC:', error);
+      console.error('Error converting JST display to UTC:', error);
       return '';
     }
   };
@@ -51,16 +70,20 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value) {
-      const utcValue = jstLocalToUTC(value);
-      onStartDateChange(utcValue);
+      const utcValue = jstDisplayToUTC(value);
+      if (utcValue) {
+        onStartDateChange(utcValue);
+      }
     }
   };
 
   const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value) {
-      const utcValue = jstLocalToUTC(value);
-      onEndDateChange(utcValue);
+      const utcValue = jstDisplayToUTC(value);
+      if (utcValue) {
+        onEndDateChange(utcValue);
+      }
     }
   };
 
@@ -78,12 +101,16 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
             開始日時（JST）
           </label>
           <input
-            type="datetime-local"
+            type="text"
             id="startDate"
-            value={utcToJSTLocal(startDate)}
+            value={utcToJSTDisplay(startDate)}
             onChange={handleStartDateChange}
+            placeholder="2025-01-15 14:30"
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
+          <div className="text-xs text-gray-500 mt-1">
+            形式: YYYY-MM-DD HH:mm
+          </div>
         </div>
         
         <div>
@@ -92,12 +119,16 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
             終了日時（JST）
           </label>
           <input
-            type="datetime-local"
+            type="text"
             id="endDate"
-            value={utcToJSTLocal(endDate)}
+            value={utcToJSTDisplay(endDate)}
             onChange={handleEndDateChange}
+            placeholder="2025-01-15 15:30"
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
+          <div className="text-xs text-gray-500 mt-1">
+            形式: YYYY-MM-DD HH:mm
+          </div>
         </div>
       </div>
       
