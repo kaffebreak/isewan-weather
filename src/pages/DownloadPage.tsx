@@ -15,20 +15,18 @@ export const DownloadPage: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
-  useEffect(() => {
-    // 初期状態は空文字列（ブランク）
-    setStartDate('');
-    setEndDate('');
-  }, []);
-
-  useEffect(() => {
-    // Auto-search when parameters change
-    if (startDate && endDate) {
-      handleSearch();
-    }
-  }, [selectedStation, isMarineMode, startDate, endDate]);
-
   const handleSearch = async () => {
+    // バリデーション
+    if (startDate && endDate) {
+      const startTime = new Date(startDate).getTime();
+      const endTime = new Date(endDate).getTime();
+      
+      if (startTime >= endTime) {
+        alert('開始時間は終了時間より前に設定してください');
+        return;
+      }
+    }
+
     setIsSearching(true);
     try {
       const data = await apiService.getWeatherData(
