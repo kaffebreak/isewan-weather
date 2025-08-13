@@ -20,13 +20,9 @@ export const DownloadPage: React.FC = () => {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
-    // 日本時間として設定（UTC+9時間を引いてUTCに変換）
-    const jstOffset = 9 * 60 * 60 * 1000; // 9 hours in milliseconds
-    const yesterdayUTC = new Date(yesterday.getTime() - jstOffset);
-    const nowUTC = new Date(now.getTime() - jstOffset);
-    
-    setStartDate(yesterdayUTC.toISOString().slice(0, 19));
-    setEndDate(nowUTC.toISOString().slice(0, 19));
+    // UTC時刻として設定（APIはUTCで処理）
+    setStartDate(yesterday.toISOString().slice(0, 19));
+    setEndDate(now.toISOString().slice(0, 19));
   }, []);
 
   useEffect(() => {
