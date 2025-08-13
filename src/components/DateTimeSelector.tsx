@@ -17,13 +17,10 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   // UTC文字列を日本時間の年月日（YYYYMMDD）と時分に分解
   const parseUTCToJSTComponents = (utcString: string): { dateStr: string; hour: string; minute: string } => {
     if (!utcString) {
-      const now = new Date();
       return {
-        dateStr: now.getFullYear().toString() + 
-                (now.getMonth() + 1).toString().padStart(2, '0') + 
-                now.getDate().toString().padStart(2, '0'),
-        hour: now.getHours().toString().padStart(2, '0'),
-        minute: now.getMinutes().toString().padStart(2, '0')
+        dateStr: '00000000', // ブランク状態を示すマーカー
+        hour: '00',
+        minute: '00'
       };
     }
     
