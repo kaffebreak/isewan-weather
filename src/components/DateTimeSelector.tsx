@@ -23,14 +23,8 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
       // 日本時間に変換（UTC+9時間）
       const jstDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000);
       
-      // datetime-local形式（YYYY-MM-DDTHH:mm）に変換
-      const year = jstDate.getFullYear();
-      const month = String(jstDate.getMonth() + 1).padStart(2, '0');
-      const day = String(jstDate.getDate()).padStart(2, '0');
-      const hours = String(jstDate.getHours()).padStart(2, '0');
-      const minutes = String(jstDate.getMinutes()).padStart(2, '0');
-      
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
+      // datetime-local形式に変換（YYYY-MM-DDTHH:mm）
+      return jstDate.toISOString().slice(0, 16);
     } catch (error) {
       console.error('Error converting UTC to JST:', error);
       return '';
@@ -42,11 +36,10 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
     if (!jstLocalString) return '';
     
     try {
-      // datetime-local値を日本時間として解釈
-      const jstDate = new Date(jstLocalString);
-      
+      // datetime-local値をそのままDateオブジェクトに変換（ローカル時間として扱われる）
+      const localDate = new Date(jstLocalString);
       // 日本時間からUTCに変換（-9時間）
-      const utcDate = new Date(jstDate.getTime() - 9 * 60 * 60 * 1000);
+      const utcDate = new Date(localDate.getTime() - 9 * 60 * 60 * 1000);
       
       return utcDate.toISOString().slice(0, 19);
     } catch (error) {
