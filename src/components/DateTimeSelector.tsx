@@ -18,37 +18,61 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   const utcToJSTLocal = (utcString: string): string => {
     if (!utcString) return '';
     
-    const utcDate = new Date(utcString);
-    // 日本時間に変換（UTC+9時間）
-    const jstDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000);
-    
-    // datetime-local形式（YYYY-MM-DDTHH:mm）に変換
-    return jstDate.toISOString().slice(0, 16);
+    try {
+      const utcDate = new Date(utcString);
+      // 日本時間に変換（UTC+9時間）
+      const jstDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000);
+      
+      // datetime-local形式（YYYY-MM-DDTHH:mm）に変換
+      const year = jstDate.getUTCFullYear();
+      const month = String(jstDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(jstDate.getUTCDate()).padStart(2, '0');
+      const hours = String(jstDate.getUTCHours()).padStart(2, '0');
+      const minutes = String(jstDate.getUTCMinutes()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch (error) {
+      console.error('Error converting UTC to JST:', error);
+      return '';
+    }
   };
 
   // 日本時間のdatetime-local形式をUTC文字列に変換
   const jstLocalToUTC = (jstLocalString: string): string => {
     if (!jstLocalString) return '';
     
-    // datetime-local形式の文字列を日本時間として解釈
-    const jstDate = new Date(jstLocalString);
-    // UTC時間に変換（-9時間）
-    const utcDate = new Date(jstDate.getTime() - 9 * 60 * 60 * 1000);
-    
-    return utcDate.toISOString().slice(0, 19);
+    try {
+      // datetime-local形式の文字列をパース
+      const [datePart, timePart] = jstLocalString.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hours, minutes] = timePart.split(':').map(Number);
+      
+      // 日本時間として日付オブジェクトを作成
+      const jstDate = new Date(year, month - 1, day, hours, minutes);
+      
+      // UTC時間に変換（-9時間）
+      const utcDate = new Date(jstDate.getTime() - 9 * 60 * 60 * 1000);
+      
+      return utcDate.toISOString().slice(0, 19);
+    } catch (error) {
+      console.error('Error converting JST to UTC:', error);
+      return '';
+    }
   };
 
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value) {
-      onStartDateChange(jstLocalToUTC(value));
+      const utcValue = jstLocalToUTC(value);
+      onStartDateChange(utcValue);
     }
   };
 
   const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value) {
-      onEndDateChange(jstLocalToUTC(value));
+      const utcValue = jstLocalToUTC(value);
+      onEndDateChange(utcValue);
     }
   };
 
