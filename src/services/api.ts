@@ -58,6 +58,10 @@ export class ApiService {
   async getStats(): Promise<{ total_records: number }> {
     return this.fetchWithErrorHandling(`${API_BASE_URL}/api/weather/stats`);
   }
+
+  async getLastScrapedTime(): Promise<{ last_scraped: string | null }> {
+    return this.fetchWithErrorHandling(`${API_BASE_URL}/api/weather/last-scraped`);
+  }
 }
 
 export const apiService = new ApiService();

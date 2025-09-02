@@ -10,6 +10,7 @@ export const Dashboard: React.FC = () => {
   const [filteredRecentData, setFilteredRecentData] = useState<WeatherData[]>([]);
   const [selectedStation, setSelectedStation] = useState<string>('');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [lastScraped, setLastScraped] = useState<Date | null>(null);
 
   // 定数
   const REFRESH_INTERVAL = 5 * 60 * 1000; // 5分
@@ -29,10 +30,12 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     loadLatestData();
     loadRecentData();
+    loadLastScrapedTime();
     
     const interval = setInterval(() => {
       loadLatestData();
       loadRecentData();
+      loadLastScrapedTime();
     }, REFRESH_INTERVAL);
     
     return () => clearInterval(interval);
@@ -61,6 +64,17 @@ export const Dashboard: React.FC = () => {
       setFilteredRecentData(data);
     } catch (error) {
       console.error('Error loading recent data:', error);
+    }
+  };
+
+  const loadLastScrapedTime = async () => {
+    try {
+      const response = await apiService.getLastScrapedTime();
+      if (response.last_scraped) {
+        setLastScraped(new Date(response.last_scraped));
+      }
+    } catch (error) {
+      console.error('Error loading last scraped time:', error);
     }
   };
 
@@ -134,10 +148,10 @@ export const Dashboard: React.FC = () => {
             <strong>履歴保存:</strong> {SYSTEM_INFO.historyType}
           </div>
         </div>
-        {lastUpdated && (
+        {lastScraped && (
           <div className="mt-4 pt-4 border-t border-gray-200">
             <p className="text-sm text-gray-500">
-              最終更新: {lastUpdated.toLocaleString('ja-JP')}
+              最終スクレイピング: {lastScraped.toLocaleString('ja-JP')}
             </p>
           </div>
         )}

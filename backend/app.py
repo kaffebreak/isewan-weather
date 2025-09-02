@@ -468,6 +468,15 @@ class WeatherAPIHandler(BaseHTTPRequestHandler):
                 count = self.db.get_data_count()
                 self.send_json_response({'total_records': count})
                 
+            elif path == '/api/weather/last-scraped':
+                last_record = self.db.get_latest_data()
+                if last_record:
+                    self.send_json_response({
+                        'last_scraped': last_record[0]['created_at']
+                    })
+                else:
+                    self.send_json_response({'last_scraped': None})
+                
             elif path == '/api/stations':
                 self.send_json_response(self.scraper.stations)
                 
