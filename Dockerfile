@@ -2,11 +2,11 @@ FROM node:18-alpine as frontend-builder
 
 WORKDIR /app
 
-# Copy environment file
-COPY .env ./
-
+# Copy package files first for better layer caching
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --only=production
+
+# Copy source code and build
 COPY . .
 RUN npm run build
 
@@ -16,7 +16,11 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y \
     cron \
     sqlite3 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 WORKDIR /app
 
@@ -30,17 +34,22 @@ COPY backend/ ./
 # Copy built frontend
 COPY --from=frontend-builder /app/dist ./static
 
-# Create data directory
-RUN mkdir -p /app/data
+# Create data and logs directories with proper permissions
+RUN mkdir -p /app/data /app/logs && \
+    chown -R appuser:appuser /app
 
 # Copy cron job
 COPY docker/crontab /etc/cron.d/isewan-weather
-RUN chmod 0644 /etc/cron.d/isewan-weather
-RUN crontab /etc/cron.d/isewan-weather
+RUN chmod 0644 /etc/cron.d/isewan-weather && \
+    chown root:root /etc/cron.d/isewan-weather
 
-# Create startup script
+# Copy startup script
 COPY docker/start.sh /start.sh
-RUN chmod +x /start.sh
+RUN chmod +x /start.sh && \
+    chown appuser:appuser /start.sh
+
+# Switch to non-root user
+USER appuser
 
 EXPOSE 8000
 

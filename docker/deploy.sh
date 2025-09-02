@@ -9,6 +9,7 @@ echo "=== 伊勢湾気象データ管理システム Docker デプロイ開始 =
 # 変数設定
 PROJECT_DIR="/opt/isewan-weather"
 DOMAIN="10.10.10.11"  # 固定IPアドレス
+ENV_FILE=".env"
 
 # 1. Docker と Docker Compose のインストール確認
 echo "1. Docker環境を確認中..."
@@ -35,9 +36,16 @@ echo "3. プロジェクトファイルをコピー中..."
 cp -r . $PROJECT_DIR/
 cd $PROJECT_DIR
 
-# 4. データディレクトリ作成
-echo "4. データディレクトリを作成中..."
+# 4. 環境変数ファイルとデータディレクトリ作成
+echo "4. 環境変数ファイルとデータディレクトリを作成中..."
+if [ ! -f "$ENV_FILE" ]; then
+    echo "環境変数ファイルが見つかりません。env.exampleをコピーします..."
+    cp env.example "$ENV_FILE"
+fi
+
 mkdir -p data logs ssl
+chmod 755 data logs
+chmod 644 "$ENV_FILE"
 
 # 5. Nginx設定でドメイン名を更新
 echo "5. Nginx設定を更新中..."
@@ -53,14 +61,27 @@ docker-compose up -d
 
 # 8. ヘルスチェック
 echo "8. サービスの起動を確認中..."
-sleep 10
+sleep 15
+
+# 複数のエンドポイントでヘルスチェック
+echo "ヘルスチェック実行中..."
 if curl -f http://localhost:8000/api/weather/stats > /dev/null 2>&1; then
-    echo "✅ サービスが正常に起動しました"
+    echo "✅ バックエンドAPIが正常に応答しています"
 else
-    echo "❌ サービスの起動に失敗しました"
-    docker-compose logs
+    echo "❌ バックエンドAPIの起動に失敗しました"
+    docker-compose logs isewan-weather
     exit 1
 fi
+
+if curl -f http://$DOMAIN/health > /dev/null 2>&1; then
+    echo "✅ Nginxが正常に応答しています"
+else
+    echo "❌ Nginxの起動に失敗しました"
+    docker-compose logs nginx
+    exit 1
+fi
+
+echo "✅ 全てのサービスが正常に起動しました"
 
 echo "=== デプロイ完了 ==="
 echo ""
