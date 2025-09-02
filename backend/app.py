@@ -408,7 +408,8 @@ class WeatherScraper:
 
 class WeatherAPIHandler(BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
-        self.db = WeatherDatabase('/app/data/weather_data.db')
+        data_dir = os.path.join(os.path.dirname(__file__), 'data')
+        self.db = WeatherDatabase(os.path.join(data_dir, 'weather_data.db'))
         self.scraper = WeatherScraper()
         super().__init__(*args, **kwargs)
     
@@ -442,10 +443,25 @@ class WeatherAPIHandler(BaseHTTPRequestHandler):
                 station_code = query_params.get('station_code', [None])[0]
                 limit = query_params.get('limit', [None])[0]
                 
+                # フロントエンドからの日時は既に日本時間なので、そのまま使用
+                if start_date:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(start_date.replace('T', ' '))
+                    start_date = dt.strftime('%Y-%m-%d %H:%M:%S')
+                
+                if end_date:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(end_date.replace('T', ' '))
+                    end_date = dt.strftime('%Y-%m-%d %H:%M:%S')
+                
+                # ログ出力でパラメータを確認
+                print(f"DEBUG: Using JST directly - start_date: {start_date}, end_date: {end_date}, station_code: {station_code}")
+                
                 if limit:
                     limit = int(limit)
                 
                 data = self.db.get_weather_data(start_date, end_date, station_code, limit)
+                print(f"DEBUG: Found {len(data)} records")
                 self.send_json_response(data)
                 
             elif path == '/api/weather/stats':
@@ -532,7 +548,8 @@ def run_server(port=8000):
     server_address = ('0.0.0.0', port)  # Docker環境では0.0.0.0でリッスン
     httpd = HTTPServer(server_address, WeatherAPIHandler)
     print(f"Starting Python weather API server on port {port}")
-    print(f"Database will be saved as: /app/data/weather_data.db")
+    data_dir = os.path.join(os.path.dirname(__file__), 'data')
+    print(f"Database will be saved as: {os.path.join(data_dir, 'weather_data.db')}")
     print("Available endpoints:")
     print("  GET  /api/weather/latest - Get latest data from all stations")
     print("  GET  /api/weather/data - Get weather data with optional filters")
@@ -553,7 +570,9 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
     
     # データディレクトリを作成
-    os.makedirs('/app/data', exist_ok=True)
-    os.makedirs('/app/logs', exist_ok=True)
+    data_dir = os.path.join(os.path.dirname(__file__), 'data')
+    logs_dir = os.path.join(os.path.dirname(__file__), 'logs')
+    os.makedirs(data_dir, exist_ok=True)
+    os.makedirs(logs_dir, exist_ok=True)
     
     run_server(port)

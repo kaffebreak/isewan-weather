@@ -12,7 +12,9 @@ export const HistoryPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   
-  const itemsPerPage = 50;
+  // 定数
+  const ITEMS_PER_PAGE = 50;
+  const MAX_VISIBLE_PAGES = 5;
 
   useEffect(() => {
     loadAllData();
@@ -41,8 +43,8 @@ export const HistoryPage: React.FC = () => {
       filtered = allData.filter(d => d.station_code === selectedStation);
     }
 
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
     setDisplayData(filtered.slice(startIndex, endIndex));
   };
 
@@ -54,7 +56,7 @@ export const HistoryPage: React.FC = () => {
   };
 
   const getTotalPages = (): number => {
-    return Math.ceil(getFilteredDataLength() / itemsPerPage);
+    return Math.ceil(getFilteredDataLength() / ITEMS_PER_PAGE);
   };
 
   const handleStationChange = (stationCode: string) => {
@@ -69,13 +71,12 @@ export const HistoryPage: React.FC = () => {
   const getPaginationRange = (): number[] => {
     const totalPages = getTotalPages();
     const range: number[] = [];
-    const maxVisible = 5;
     
-    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-    let end = Math.min(totalPages, start + maxVisible - 1);
+    let start = Math.max(1, currentPage - Math.floor(MAX_VISIBLE_PAGES / 2));
+    let end = Math.min(totalPages, start + MAX_VISIBLE_PAGES - 1);
     
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
+    if (end - start + 1 < MAX_VISIBLE_PAGES) {
+      start = Math.max(1, end - MAX_VISIBLE_PAGES + 1);
     }
     
     for (let i = start; i <= end; i++) {
@@ -107,7 +108,7 @@ export const HistoryPage: React.FC = () => {
           データ履歴
         </h2>
         <p className="text-gray-600">
-          保存されている全ての観測データを閲覧できます。観測地点を選択してフィルタリングすることも可能です。
+          全観測データの閲覧と観測地点でのフィルタリングが可能です。
         </p>
       </div>
 

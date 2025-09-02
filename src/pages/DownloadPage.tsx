@@ -5,7 +5,7 @@ import { DateTimeSelector } from '../components/DateTimeSelector';
 import { StationSelector } from '../components/StationSelector';
 import { DataTable } from '../components/DataTable';
 import { exportToCSV, exportToCSVForMarine, formatDateTimeForFilename } from '../utils/csvExport';
-import { Download, Search, Database } from 'lucide-react';
+import { Download, Database } from 'lucide-react';
 
 export const DownloadPage: React.FC = () => {
   const [filteredData, setFilteredData] = useState<WeatherData[]>([]);
@@ -13,31 +13,44 @@ export const DownloadPage: React.FC = () => {
   const [isMarineMode, setIsMarineMode] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+
+  // 定数
+  const HOURS_24 = 24 * 60 * 60 * 1000;
+  const PREVIEW_LIMIT = 100;
+
+  // 日時フォーマット用ユーティリティ
+  const formatForDateTimeLocal = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // ファイル名生成用ユーティリティ
+  const generateFilename = (prefix: string) => {
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const timeStr = now.toISOString().slice(11, 16).replace(/:/g, '');
+    return `${prefix}_${dateStr}_${timeStr}.csv`;
+  };
 
   useEffect(() => {
-    // Set default date range (last 24 hours)
     const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const yesterday = new Date(now.getTime() - HOURS_24);
     
-    // 日本時間として設定（UTC+9時間を引いてUTCに変換）
-    const jstOffset = 9 * 60 * 60 * 1000; // 9 hours in milliseconds
-    const yesterdayUTC = new Date(yesterday.getTime() - jstOffset);
-    const nowUTC = new Date(now.getTime() - jstOffset);
-    
-    setStartDate(yesterdayUTC.toISOString().slice(0, 19));
-    setEndDate(nowUTC.toISOString().slice(0, 19));
+    setStartDate(formatForDateTimeLocal(yesterday));
+    setEndDate(formatForDateTimeLocal(now));
   }, []);
 
   useEffect(() => {
-    // Auto-search when parameters change
     if (startDate && endDate) {
       handleSearch();
     }
   }, [selectedStation, isMarineMode, startDate, endDate]);
 
   const handleSearch = async () => {
-    setIsSearching(true);
     try {
       const data = await apiService.getWeatherData(
         startDate || undefined,
@@ -48,8 +61,6 @@ export const DownloadPage: React.FC = () => {
     } catch (error) {
       console.error('Error filtering data:', error);
       setFilteredData([]);
-    } finally {
-      setIsSearching(false);
     }
   };
 
@@ -59,12 +70,8 @@ export const DownloadPage: React.FC = () => {
       return;
     }
     
-    // Create a more descriptive filename
-    const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-    const timeStr = now.toISOString().slice(11, 16).replace(/:/g, '');
     const stationStr = selectedStation ? `_${selectedStation}` : '_all_stations';
-    const filename = `isewan_weather_${dateStr}_${timeStr}${stationStr}.csv`;
+    const filename = `isewan_weather${stationStr}_${generateFilename('').replace('.csv', '')}.csv`;
     
     exportToCSV(filteredData, filename);
   };
@@ -75,12 +82,7 @@ export const DownloadPage: React.FC = () => {
       return;
     }
     
-    // Create marine-specific filename
-    const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-    const timeStr = now.toISOString().slice(11, 16).replace(/:/g, '');
-    const filename = `isewan_marine_${dateStr}_${timeStr}.csv`;
-    
+    const filename = generateFilename('isewan_marine');
     exportToCSVForMarine(filteredData, filename);
   };
 
@@ -103,12 +105,10 @@ export const DownloadPage: React.FC = () => {
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">データダウンロード</h2>
         <p className="text-gray-600 mb-6">
-          期間と観測地点を指定してデータを検索し、CSVファイルとしてダウンロードできます。
-          「湾内乗下船用」を選択すると、伊良湖岬基準の時間軸で3箇所の観測データを横並びで出力できます。
+          期間と観測地点を指定してデータをダウンロードできます。「湾内乗下船用」は3箇所の観測データを横並びで出力します。
         </p>
       </div>
 
-      {/* Search Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DateTimeSelector
           startDate={startDate}
@@ -124,7 +124,6 @@ export const DownloadPage: React.FC = () => {
         />
       </div>
 
-      {/* Search and Download Actions */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <div className="flex items-center gap-2 text-gray-600">
@@ -133,15 +132,6 @@ export const DownloadPage: React.FC = () => {
           </div>
           
           <div className="flex gap-4">
-            <button
-              onClick={handleSearch}
-              disabled={isSearching}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Search className={`w-4 h-4 ${isSearching ? 'animate-spin' : ''}`} />
-              {isSearching ? '検索中...' : '検索'}
-            </button>
-            
             {isMarineMode ? (
               <button
                 onClick={handleMarineDownload}
@@ -165,17 +155,15 @@ export const DownloadPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Data Preview */}
       <DataTable
-        data={filteredData.slice(0, 100)} // Show first 100 records for preview
+        data={filteredData.slice(0, PREVIEW_LIMIT)}
         title={`検索結果プレビュー ${selectedStation ? `- ${selectedStation}` : '- 全地点'}`}
       />
 
-      {filteredData.length > 100 && (
+      {filteredData.length > PREVIEW_LIMIT && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <p className="text-yellow-800">
-            <strong>注意:</strong> 検索結果が100件を超えています。プレビューでは最初の100件のみ表示されていますが、
-            CSVダウンロードでは全{filteredData.length}件のデータが含まれます。
+            <strong>注意:</strong> プレビューは{PREVIEW_LIMIT}件まで。CSVダウンロードでは全{filteredData.length}件が含まれます。
           </p>
         </div>
       )}

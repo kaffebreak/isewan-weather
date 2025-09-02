@@ -11,15 +11,29 @@ export const Dashboard: React.FC = () => {
   const [selectedStation, setSelectedStation] = useState<string>('');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+  // 定数
+  const REFRESH_INTERVAL = 5 * 60 * 1000; // 5分
+  const THREE_HOURS = 3 * 60 * 60 * 1000; // 3時間
+  const RECENT_DATA_LIMIT = 50; // 最近データの取得件数
+
+  // システム情報
+  const SYSTEM_INFO = {
+    stationCount: 5,
+    dataItems: ['風向', '風速', '波高'],
+    updateInterval: '5分間隔',
+    timePrecision: '時まで',
+    dataFormat: 'CSV出力対応',
+    historyType: '継続蓄積型'
+  };
+
   useEffect(() => {
     loadLatestData();
     loadRecentData();
     
-    // Set up auto-refresh every 5 minutes
     const interval = setInterval(() => {
       loadLatestData();
       loadRecentData();
-    }, 5 * 60 * 1000); // 5 minutes
+    }, REFRESH_INTERVAL);
     
     return () => clearInterval(interval);
   }, []);
@@ -36,13 +50,12 @@ export const Dashboard: React.FC = () => {
 
   const loadRecentData = async () => {
     try {
-      // Get data from last 3 hours
-      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+      const threeHoursAgo = new Date(Date.now() - THREE_HOURS);
       const data = await apiService.getWeatherData(
         threeHoursAgo.toISOString().slice(0, 19),
         undefined,
         undefined,
-        50 // Limit to 50 most recent records
+        RECENT_DATA_LIMIT
       );
       setRecentData(data);
       setFilteredRecentData(data);
@@ -109,16 +122,16 @@ export const Dashboard: React.FC = () => {
         <h3 className="text-lg font-semibold mb-4 text-gray-900">システム情報</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
           <div>
-            <strong>観測地点:</strong> 5箇所<br />
-            <strong>データ項目:</strong> 風向・風速・波高
+            <strong>観測地点:</strong> {SYSTEM_INFO.stationCount}箇所<br />
+            <strong>データ項目:</strong> {SYSTEM_INFO.dataItems.join('・')}
           </div>
           <div>
-            <strong>自動更新:</strong> 5分間隔<br />
-            <strong>時間精度:</strong> 時まで
+            <strong>自動更新:</strong> {SYSTEM_INFO.updateInterval}<br />
+            <strong>時間精度:</strong> {SYSTEM_INFO.timePrecision}
           </div>
           <div>
-            <strong>データ形式:</strong> CSV出力対応<br />
-            <strong>履歴保存:</strong> 継続蓄積型
+            <strong>データ形式:</strong> {SYSTEM_INFO.dataFormat}<br />
+            <strong>履歴保存:</strong> {SYSTEM_INFO.historyType}
           </div>
         </div>
         {lastUpdated && (

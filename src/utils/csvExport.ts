@@ -1,22 +1,28 @@
 import { WeatherData } from '../types/weather';
 
+// エラーメッセージ
+const ERROR_MESSAGES = {
+  NO_DATA: 'ダウンロードするデータがありません',
+  DOWNLOAD_NOT_SUPPORTED: 'ダウンロードがサポートされていません',
+  CSV_EXPORT_ERROR: 'CSVファイルの作成中にエラーが発生しました',
+  MARINE_CSV_EXPORT_ERROR: '湾内乗下船用CSVファイルの作成中にエラーが発生しました'
+} as const;
+
+// CSVヘッダー
+const CSV_HEADERS = {
+  STANDARD: ['観測地点', '地点コード', '日時', '風向', '風速(m/s)', '波高(m)', '登録日時'],
+  MARINE: ['日時', '伊良湖岬_風向', '伊良湖岬_風速', '伊勢湾2号ブイ_風向', '伊勢湾2号ブイ_風速', '伊勢湾2号ブイ_波高', '大王埼_風向', '大王埼_風速', '大王埼_波高']
+} as const;
+
 export function exportToCSV(data: WeatherData[], filename: string = 'weather_data.csv'): void {
   if (data.length === 0) {
-    alert('ダウンロードするデータがありません');
+    alert(ERROR_MESSAGES.NO_DATA);
     return;
   }
 
   try {
 
-  const headers = [
-    '観測地点',
-    '地点コード',
-    '日時',
-    '風向',
-    '風速(m/s)',
-    '波高(m)',
-    '登録日時'
-  ];
+  const headers = CSV_HEADERS.STANDARD;
 
   const csvContent = [
     headers.join(','),
@@ -44,11 +50,11 @@ export function exportToCSV(data: WeatherData[], filename: string = 'weather_dat
     document.body.removeChild(link);
     URL.revokeObjectURL(url); // Clean up the URL object
   } else {
-    alert('ダウンロードがサポートされていません');
+    alert(ERROR_MESSAGES.DOWNLOAD_NOT_SUPPORTED);
   }
 } catch (error) {
   console.error('CSV export error:', error);
-  alert('CSVファイルの作成中にエラーが発生しました');
+  alert(ERROR_MESSAGES.CSV_EXPORT_ERROR);
 }
 }
 
@@ -70,7 +76,7 @@ export function formatDateTimeForFilename(date: Date = new Date()): string {
 
 export function exportToCSVForMarine(data: WeatherData[], filename: string = 'marine_weather.csv'): void {
   if (data.length === 0) {
-    alert('ダウンロードするデータがありません');
+    alert(ERROR_MESSAGES.NO_DATA);
     return;
   }
 
@@ -106,17 +112,7 @@ export function exportToCSVForMarine(data: WeatherData[], filename: string = 'ma
       }
     });
 
-    const headers = [
-      '日時',
-      '伊良湖岬_風向',
-      '伊良湖岬_風速',
-      '伊勢湾2号ブイ_風向',
-      '伊勢湾2号ブイ_風速',
-      '伊勢湾2号ブイ_波高',
-      '大王埼_風向',
-      '大王埼_風速',
-      '大王埼_波高'
-    ];
+    const headers = CSV_HEADERS.MARINE;
 
     const csvContent = [
       headers.join(','),
@@ -145,11 +141,11 @@ export function exportToCSVForMarine(data: WeatherData[], filename: string = 'ma
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-    } else {
-      alert('ダウンロードがサポートされていません');
-    }
-  } catch (error) {
-    console.error('Marine CSV export error:', error);
-    alert('湾内乗下船用CSVファイルの作成中にエラーが発生しました');
+      } else {
+    alert(ERROR_MESSAGES.DOWNLOAD_NOT_SUPPORTED);
   }
+} catch (error) {
+  console.error('Marine CSV export error:', error);
+  alert(ERROR_MESSAGES.MARINE_CSV_EXPORT_ERROR);
+}
 }
