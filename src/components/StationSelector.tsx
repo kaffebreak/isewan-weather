@@ -9,6 +9,9 @@ interface StationSelectorProps {
   onMarineModeChange?: (isMarine: boolean) => void;
 }
 
+// 定数
+const MARINE_MODE_VALUE = 'marine' as const;
+
 export const StationSelector: React.FC<StationSelectorProps> = ({
   selectedStation,
   onStationChange,
@@ -57,7 +60,7 @@ export const StationSelector: React.FC<StationSelectorProps> = ({
             <input
               type="radio"
               name="station"
-              value="marine"
+              value={MARINE_MODE_VALUE}
               checked={isMarineMode}
               onChange={(e) => {
                 onMarineModeChange(true);

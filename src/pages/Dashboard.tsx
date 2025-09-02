@@ -3,6 +3,7 @@ import { WeatherData } from '../types/weather';
 import { apiService } from '../services/api';
 import { LatestDataGrid } from '../components/LatestDataGrid';
 import { DataTable } from '../components/DataTable';
+import { TIME_CONSTANTS, SYSTEM_INFO } from '../constants/app';
 
 export const Dashboard: React.FC = () => {
   const [latestData, setLatestData] = useState<WeatherData[]>([]);
@@ -13,19 +14,7 @@ export const Dashboard: React.FC = () => {
   const [lastScraped, setLastScraped] = useState<Date | null>(null);
 
   // 定数
-  const REFRESH_INTERVAL = 5 * 60 * 1000; // 5分
-  const THREE_HOURS = 3 * 60 * 60 * 1000; // 3時間
-  const RECENT_DATA_LIMIT = 50; // 最近データの取得件数
 
-  // システム情報
-  const SYSTEM_INFO = {
-    stationCount: 5,
-    dataItems: ['風向', '風速', '波高'],
-    updateInterval: '5分間隔',
-    timePrecision: '時まで',
-    dataFormat: 'CSV出力対応',
-    historyType: '継続蓄積型'
-  };
 
   useEffect(() => {
     loadLatestData();
@@ -36,7 +25,7 @@ export const Dashboard: React.FC = () => {
       loadLatestData();
       loadRecentData();
       loadLastScrapedTime();
-    }, REFRESH_INTERVAL);
+    }, TIME_CONSTANTS.REFRESH_INTERVAL);
     
     return () => clearInterval(interval);
   }, []);
@@ -53,12 +42,12 @@ export const Dashboard: React.FC = () => {
 
   const loadRecentData = async () => {
     try {
-      const threeHoursAgo = new Date(Date.now() - THREE_HOURS);
+      const threeHoursAgo = new Date(Date.now() - TIME_CONSTANTS.THREE_HOURS);
       const data = await apiService.getWeatherData(
         threeHoursAgo.toISOString().slice(0, 19),
         undefined,
         undefined,
-        RECENT_DATA_LIMIT
+        TIME_CONSTANTS.RECENT_DATA_LIMIT
       );
       setRecentData(data);
       setFilteredRecentData(data);
@@ -136,16 +125,16 @@ export const Dashboard: React.FC = () => {
         <h3 className="text-lg font-semibold mb-4 text-gray-900">システム情報</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
           <div>
-            <strong>観測地点:</strong> {SYSTEM_INFO.stationCount}箇所<br />
-            <strong>データ項目:</strong> {SYSTEM_INFO.dataItems.join('・')}
+            <strong>観測地点:</strong> {SYSTEM_INFO.STATION_COUNT}箇所<br />
+            <strong>データ項目:</strong> {SYSTEM_INFO.DATA_ITEMS.join('・')}
           </div>
           <div>
-            <strong>自動更新:</strong> {SYSTEM_INFO.updateInterval}<br />
-            <strong>時間精度:</strong> {SYSTEM_INFO.timePrecision}
+            <strong>自動更新:</strong> {SYSTEM_INFO.UPDATE_INTERVAL}<br />
+            <strong>時間精度:</strong> {SYSTEM_INFO.TIME_PRECISION}
           </div>
           <div>
-            <strong>データ形式:</strong> {SYSTEM_INFO.dataFormat}<br />
-            <strong>履歴保存:</strong> {SYSTEM_INFO.historyType}
+            <strong>データ形式:</strong> {SYSTEM_INFO.DATA_FORMAT}<br />
+            <strong>履歴保存:</strong> {SYSTEM_INFO.HISTORY_TYPE}
           </div>
         </div>
         {lastScraped && (

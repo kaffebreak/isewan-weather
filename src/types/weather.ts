@@ -16,6 +16,30 @@ export interface Station {
   hasWaveHeight: boolean;
 }
 
+// 観測地点の色定義
+export const STATION_COLORS = {
+  iragomisaki_vtss: {
+    bg: 'bg-blue-100 text-blue-800',
+    gradient: 'from-blue-500 to-blue-600'
+  },
+  iragosuido_southeast_aisss: {
+    bg: 'bg-teal-100 text-teal-800',
+    gradient: 'from-teal-500 to-teal-600'
+  },
+  daiosaki_lt: {
+    bg: 'bg-green-100 text-green-800',
+    gradient: 'from-green-500 to-green-600'
+  },
+  nagoyako_bw: {
+    bg: 'bg-yellow-100 text-yellow-800',
+    gradient: 'from-yellow-500 to-yellow-600'
+  },
+  yokkaichiko_bkw_lt: {
+    bg: 'bg-purple-100 text-purple-800',
+    gradient: 'from-purple-500 to-purple-600'
+  }
+} as const;
+
 export const STATIONS: Station[] = [
   {
     name: '伊良湖岬',

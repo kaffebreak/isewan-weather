@@ -1,5 +1,5 @@
 import React from 'react';
-import { WeatherData } from '../types/weather';
+import { WeatherData, STATION_COLORS } from '../types/weather';
 import { Wind, Waves, MapPin } from 'lucide-react';
 
 interface DataTableProps {
@@ -17,14 +17,7 @@ export const DataTable: React.FC<DataTableProps> = ({ data, title = 'Weather Dat
   }
 
   const getStationColor = (stationCode: string): string => {
-    const STATION_COLORS: Record<string, string> = {
-      'iragomisaki_vtss': 'bg-blue-100 text-blue-800',
-      'iragosuido_southeast_aisss': 'bg-teal-100 text-teal-800',
-      'daiosaki_lt': 'bg-green-100 text-green-800',
-      'nagoyako_bw': 'bg-yellow-100 text-yellow-800',
-      'yokkaichiko_bkw_lt': 'bg-purple-100 text-purple-800'
-    } as const;
-    return STATION_COLORS[stationCode] || 'bg-gray-100 text-gray-800';
+    return STATION_COLORS[stationCode as keyof typeof STATION_COLORS]?.bg || 'bg-gray-100 text-gray-800';
   };
 
   const formatWindDirection = (direction?: string): string => {

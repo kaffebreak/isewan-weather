@@ -1,5 +1,5 @@
 import React from 'react';
-import { WeatherData } from '../types/weather';
+import { WeatherData, STATION_COLORS } from '../types/weather';
 import { Wind, Waves, MapPin, Clock } from 'lucide-react';
 
 interface LatestDataCardProps {
@@ -9,14 +9,7 @@ interface LatestDataCardProps {
 
 export const LatestDataCard: React.FC<LatestDataCardProps> = ({ data, onClick }) => {
   const getStationColor = (stationCode: string): string => {
-    const colors: Record<string, string> = {
-      'iragomisaki_vtss': 'from-blue-500 to-blue-600',
-      'iragosuido_southeast_aisss': 'from-teal-500 to-teal-600',
-      'daiosaki_lt': 'from-green-500 to-green-600',
-      'nagoyako_bw': 'from-yellow-500 to-yellow-600',
-      'yokkaichiko_bkw_lt': 'from-purple-500 to-purple-600'
-    };
-    return colors[stationCode] || 'from-gray-500 to-gray-600';
+    return STATION_COLORS[stationCode as keyof typeof STATION_COLORS]?.gradient || 'from-gray-500 to-gray-600';
   };
 
   const formatValue = (value?: number, unit: string = ''): string => {
