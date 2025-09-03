@@ -23,35 +23,50 @@
 - 期間指定によるデータ検索
 - CSVファイルでのデータエクスポート
 - レスポンシブWebインターフェース
+- ダッシュボード、データダウンロード、履歴表示の3画面構成
 
 ## セットアップ
 
-### 1. 依存関係のインストール
+### 1. 環境変数の設定
+```bash
+# .envファイルを作成
+cp env.example .env
+
+# 必要に応じて環境変数を編集
+VITE_API_URL=http://localhost:8000
+NGINX_HOST=localhost
+NGINX_PORT=80
+```
+
+### 2. Docker Composeを使用した起動（推奨）
+```bash
+# 開発環境
+docker-compose -f docker-compose.dev.yml up -d
+
+# 本番環境
+docker-compose -f docker-compose.prod.yml up -d
+
+# または標準設定
+docker-compose up -d
+```
+
+### 3. 手動セットアップ（開発用）
+
+#### 依存関係のインストール
 ```bash
 # フロントエンド依存関係
 npm install
 
 # バックエンド依存関係
-```bash
-# venv環境を使用する場合
 cd backend
-source ../.venv/bin/activate
 pip install -r requirements.txt
-
-# または直接インストール
-pip install beautifulsoup4 requests
-```
 ```
 
-### 2. サーバーの起動
+#### サーバーの起動
 ```bash
 # バックエンドサーバーを起動
 cd backend
-source ../.venv/bin/activate  # venv環境を使用する場合
 python app.py
-
-# または npm script を使用
-npm run python-server
 
 # フロントエンド開発サーバーを起動（別ターミナルで）
 npm run dev
@@ -71,7 +86,13 @@ npm run dev
 
 ## 定期実行設定
 
-### Cronを使用した自動実行例
+### Docker環境での自動実行
+```bash
+# コンテナ内のcronが自動的にデータを取得
+# 設定は docker/crontab で管理
+```
+
+### 手動環境でのCron設定例
 ```bash
 # 5分ごとにデータを取得（推奨）
 */5 * * * * cd /path/to/project/backend && /usr/bin/python scraper_cron.py
@@ -90,14 +111,22 @@ python backend/scraper_cron.py
 
 ### フロントエンド
 - React 18 + TypeScript
+- Vite (ビルドツール)
 - Tailwind CSS
 - Lucide React (アイコン)
+- Axios (HTTP クライアント)
 
 ### バックエンド
-- Python 3.x
+- Python 3.11
 - requests (HTTP クライアント)
 - BeautifulSoup4 (HTML パース)
 - SQLite (データベース)
+
+### インフラストラクチャ
+- Docker & Docker Compose
+- Nginx (リバースプロキシ)
+- ヘルスチェック機能
+- タイムゾーン設定 (Asia/Tokyo)
 
 ### データベース
 - SQLite (weather_data.db)
@@ -121,9 +150,19 @@ python backend/scraper_cron.py
 
 ## 開発・カスタマイズ
 
-### サーバー起動
+### 開発環境でのサーバー起動
 1. Pythonバックエンドサーバーを起動: `python backend/app.py`
 2. フロントエンド開発サーバーを起動: `npm run dev`
+
+### 本番環境でのデプロイ
+```bash
+# Docker Composeを使用
+docker-compose -f docker-compose.prod.yml up -d
+
+# または個別のDockerfileを使用
+docker build -t isewan-weather .
+docker run -d -p 8000:8000 isewan-weather
+```
 
 ### 新しい観測地点の追加
 `backend/app.py` の `WeatherScraper.stations` 配列に新しい地点を追加してください。
@@ -134,6 +173,12 @@ python backend/scraper_cron.py
 - `POST /api/weather/scrape` - データスクレイピング実行
 - `GET /api/stations` - 観測地点情報取得
 - `GET /api/weather/stats` - データベース統計情報
+
+### 環境変数
+- `VITE_API_URL`: フロントエンドからアクセスするAPIのURL
+- `NGINX_HOST`: Nginxのホストアドレス
+- `NGINX_PORT`: Nginxのポート番号
+- `TZ`: タイムゾーン設定
 
 ## ライセンス
 
