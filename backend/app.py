@@ -480,6 +480,33 @@ class WeatherAPIHandler(BaseHTTPRequestHandler):
             elif path == '/api/stations':
                 self.send_json_response(self.scraper.stations)
                 
+            elif path.startswith('/assets/') or path == '/vite.svg':
+                # Serve built frontend assets when accessed directly on port 8000
+                # without the '/static/' prefix (e.g., '/assets/...', '/vite.svg')
+                asset_rel_path = path.lstrip('/')  # e.g., 'assets/...', 'vite.svg'
+                file_path = os.path.join('/app/static', asset_rel_path)
+                if os.path.exists(file_path):
+                    if file_path.endswith('.html'):
+                        content_type = 'text/html'
+                    elif file_path.endswith('.js'):
+                        content_type = 'application/javascript'
+                    elif file_path.endswith('.css'):
+                        content_type = 'text/css'
+                    elif file_path.endswith('.svg'):
+                        content_type = 'image/svg+xml'
+                    else:
+                        content_type = 'application/octet-stream'
+
+                    self.send_response(200)
+                    self.send_header('Content-Type', content_type)
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+
+                    with open(file_path, 'rb') as f:
+                        self.wfile.write(f.read())
+                else:
+                    self.send_json_response({'error': 'Not found'}, 404)
+
             elif path.startswith('/static/'):
                 # 静的ファイルの配信
                 static_path = path[8:]  # Remove '/static/' prefix
