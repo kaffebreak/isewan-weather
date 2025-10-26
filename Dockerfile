@@ -4,10 +4,12 @@ WORKDIR /app
 
 # Copy package files first for better layer caching
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy source code and build
 COPY . .
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 FROM python:3.11-slim
