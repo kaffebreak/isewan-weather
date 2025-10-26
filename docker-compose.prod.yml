@@ -2,7 +2,10 @@ version: '3.8'
 
 services:
   isewan-weather:
-    build: .
+    build:
+      context: .
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://10.10.10.11:8000}
     container_name: isewan-weather
     ports:
       - "8000:8000"
