@@ -5,16 +5,9 @@ set -e
 
 echo "=== 伊勢湾気象データ管理システム 起動中 ==="
 
-# データディレクトリの権限確認
-if [ ! -w /app/data ]; then
-    echo "❌ データディレクトリに書き込み権限がありません: /app/data"
-    exit 1
-fi
-
-if [ ! -w /app/logs ]; then
-    echo "❌ ログディレクトリに書き込み権限がありません: /app/logs"
-    exit 1
-fi
+# データ/ログディレクトリの作成と権限調整（コンテナ内で完結）
+mkdir -p /app/data /app/logs
+chmod 777 /app/data /app/logs
 
 # Cronデーモンを起動
 echo "🕐 Cronデーモンを起動中..."
