@@ -24,7 +24,7 @@ export const StationSelector: React.FC<StationSelectorProps> = ({
         <MapPin className="w-5 h-5" />
         観測地点選択
       </h3>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
           <input
@@ -37,7 +37,7 @@ export const StationSelector: React.FC<StationSelectorProps> = ({
           />
           <span className="text-sm font-medium">全地点</span>
         </label>
-        
+
         {STATIONS.map((station) => (
           <label
             key={station.code}
@@ -54,7 +54,7 @@ export const StationSelector: React.FC<StationSelectorProps> = ({
             <span className="text-sm font-medium">{station.name}</span>
           </label>
         ))}
-        
+
         {onMarineModeChange && (
           <label className="flex items-center p-3 border-2 border-teal-500 rounded-lg cursor-pointer hover:bg-teal-50 col-span-full">
             <input
@@ -62,7 +62,7 @@ export const StationSelector: React.FC<StationSelectorProps> = ({
               name="station"
               value={MARINE_MODE_VALUE}
               checked={isMarineMode}
-              onChange={(e) => {
+              onChange={() => {
                 onMarineModeChange(true);
                 onStationChange(''); // Clear individual station selection
               }}

@@ -3,7 +3,7 @@ import { WeatherData, Station } from '../types/weather';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export class ApiService {
-  private async fetchWithErrorHandling(url: string, options?: RequestInit): Promise<any> {
+  private async fetchWithErrorHandling<T>(url: string, options?: RequestInit): Promise<T> {
     try {
       const response = await fetch(url, {
         ...options,
@@ -35,7 +35,7 @@ export class ApiService {
     limit?: number
   ): Promise<WeatherData[]> {
     const params = new URLSearchParams();
-    
+
     if (startDate) params.append('start_date', startDate);
     if (endDate) params.append('end_date', endDate);
     if (stationCode) params.append('station_code', stationCode);

@@ -4,8 +4,12 @@ import { apiService } from '../services/api';
 import { DateTimeSelector } from '../components/DateTimeSelector';
 import { StationSelector } from '../components/StationSelector';
 import { DataTable } from '../components/DataTable';
-import { exportToCSV, exportToCSVForMarine, formatDateTimeForFilename } from '../utils/csvExport';
+import { exportToCSV, exportToCSVForMarine } from '../utils/csvExport';
 import { Download, Database } from 'lucide-react';
+
+// 定数
+const HOURS_24 = 24 * 60 * 60 * 1000;
+const PREVIEW_LIMIT = 100;
 
 export const DownloadPage: React.FC = () => {
   const [filteredData, setFilteredData] = useState<WeatherData[]>([]);
@@ -13,10 +17,6 @@ export const DownloadPage: React.FC = () => {
   const [isMarineMode, setIsMarineMode] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-
-  // 定数
-  const HOURS_24 = 24 * 60 * 60 * 1000;
-  const PREVIEW_LIMIT = 100;
 
   // 日時フォーマット用ユーティリティ
   const formatForDateTimeLocal = (date: Date) => {
@@ -39,18 +39,12 @@ export const DownloadPage: React.FC = () => {
   useEffect(() => {
     const now = new Date();
     const yesterday = new Date(now.getTime() - HOURS_24);
-    
+
     setStartDate(formatForDateTimeLocal(yesterday));
     setEndDate(formatForDateTimeLocal(now));
   }, []);
 
-  useEffect(() => {
-    if (startDate && endDate) {
-      handleSearch();
-    }
-  }, [selectedStation, isMarineMode, startDate, endDate]);
-
-  const handleSearch = async () => {
+  const handleSearch = React.useCallback(async () => {
     try {
       const data = await apiService.getWeatherData(
         startDate || undefined,
@@ -62,17 +56,23 @@ export const DownloadPage: React.FC = () => {
       console.error('Error filtering data:', error);
       setFilteredData([]);
     }
-  };
+  }, [startDate, endDate, selectedStation]);
+
+  useEffect(() => {
+    if (startDate && endDate) {
+      handleSearch();
+    }
+  }, [handleSearch, startDate, endDate]);
 
   const handleDownload = () => {
     if (filteredData.length === 0) {
       alert('ダウンロードするデータがありません');
       return;
     }
-    
+
     const stationStr = selectedStation ? `_${selectedStation}` : '_all_stations';
     const filename = `isewan_weather${stationStr}_${generateFilename('').replace('.csv', '')}.csv`;
-    
+
     exportToCSV(filteredData, filename);
   };
 
@@ -81,7 +81,7 @@ export const DownloadPage: React.FC = () => {
       alert('ダウンロードするデータがありません');
       return;
     }
-    
+
     const filename = generateFilename('isewan_marine');
     exportToCSVForMarine(filteredData, filename);
   };
@@ -130,7 +130,7 @@ export const DownloadPage: React.FC = () => {
             <Database className="w-5 h-5" />
             <span>検索結果: {filteredData.length}件</span>
           </div>
-          
+
           <div className="flex gap-4">
             {isMarineMode ? (
               <button

@@ -11,7 +11,7 @@ export const HistoryPage: React.FC = () => {
   const [selectedStation, setSelectedStation] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // 定数
   const ITEMS_PER_PAGE = 50;
   const MAX_VISIBLE_PAGES = 5;
@@ -20,9 +20,21 @@ export const HistoryPage: React.FC = () => {
     loadAllData();
   }, []);
 
+  const filterAndPaginateData = React.useCallback(() => {
+    let filtered = allData;
+
+    if (selectedStation) {
+      filtered = allData.filter(d => d.station_code === selectedStation);
+    }
+
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    setDisplayData(filtered.slice(startIndex, endIndex));
+  }, [allData, selectedStation, currentPage]);
+
   useEffect(() => {
     filterAndPaginateData();
-  }, [allData, selectedStation, currentPage]);
+  }, [filterAndPaginateData]);
 
   const loadAllData = async () => {
     setIsLoading(true);
@@ -34,18 +46,6 @@ export const HistoryPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const filterAndPaginateData = () => {
-    let filtered = allData;
-    
-    if (selectedStation) {
-      filtered = allData.filter(d => d.station_code === selectedStation);
-    }
-
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    setDisplayData(filtered.slice(startIndex, endIndex));
   };
 
   const getFilteredDataLength = (): number => {
@@ -71,18 +71,18 @@ export const HistoryPage: React.FC = () => {
   const getPaginationRange = (): number[] => {
     const totalPages = getTotalPages();
     const range: number[] = [];
-    
+
     let start = Math.max(1, currentPage - Math.floor(MAX_VISIBLE_PAGES / 2));
-    let end = Math.min(totalPages, start + MAX_VISIBLE_PAGES - 1);
-    
+    const end = Math.min(totalPages, start + MAX_VISIBLE_PAGES - 1);
+
     if (end - start + 1 < MAX_VISIBLE_PAGES) {
       start = Math.max(1, end - MAX_VISIBLE_PAGES + 1);
     }
-    
+
     for (let i = start; i <= end; i++) {
       range.push(i);
     }
-    
+
     return range;
   };
 
@@ -158,11 +158,10 @@ export const HistoryPage: React.FC = () => {
               <button
                 key={page}
                 onClick={() => handlePageChange(page)}
-                className={`px-3 py-2 text-sm rounded-md ${
-                  currentPage === page
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={`px-3 py-2 text-sm rounded-md ${currentPage === page
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 {page}
               </button>

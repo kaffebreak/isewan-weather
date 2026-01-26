@@ -3,7 +3,7 @@ import { apiService } from './api';
 
 // Database service that connects to Python backend
 export class DatabaseService {
-  async saveWeatherData(weatherData: WeatherData[]): Promise<void> {
+  async saveWeatherData(): Promise<void> {
     // This is handled by the scraping endpoint
     throw new Error('Use apiService.scrapeData() instead');
   }
