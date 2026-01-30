@@ -1,5 +1,6 @@
 # 伊勢湾気象データ自動取得 - 5分間隔
-*/5 * * * * cd /app && /usr/local/bin/python scraper_cron.py >> /app/logs/cron.log 2>&1
+# 書式: 分 時 日 月 曜日 ユーザー コマンド
+*/5 * * * * root cd /app && /usr/local/bin/python scraper_cron.py >> /app/logs/cron.log 2>&1
 
-# ログローテーション - 毎日午前2時
-0 2 * * * find /app/logs -name "*.log" -mtime +7 -delete
+# ログローテーション - 毎日午前2時 (古いログを削除)
+0 2 * * * root find /app/logs -name "*.log" -mtime +7 -delete

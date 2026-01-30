@@ -33,49 +33,23 @@
 cp env.example .env
 
 # 必要に応じて環境変数を編集
-VITE_API_URL=http://localhost:8000
-NGINX_HOST=localhost
-NGINX_PORT=80
+# デフォルト設定でも動作します
 ```
 
 ### 2. Docker Composeを使用した起動（推奨）
 ```bash
-# 開発環境
-docker-compose -f docker-compose.dev.yml up -d
+# 開発環境（ホットリロード有効）
+docker-compose -f docker-compose.dev.yml up
 
-# 本番環境
+# 本番環境（バックグラウンド実行）
 docker-compose -f docker-compose.prod.yml up -d
-
-# または標準設定
-docker-compose up -d
-```
-
-### 3. 手動セットアップ（開発用）
-
-#### 依存関係のインストール
-```bash
-# フロントエンド依存関係
-npm install
-
-# バックエンド依存関係
-cd backend
-pip install -r requirements.txt
-```
-
-#### サーバーの起動
-```bash
-# バックエンドサーバーを起動
-cd backend
-python app.py
-
-# フロントエンド開発サーバーを起動（別ターミナルで）
-npm run dev
 ```
 
 ## 使用方法
 
 ### 1. データ取得
 「データ取得」ボタンをクリックして最新の気象データを収集します。
+初回起動時はデータが空のため、一度実行してください。
 
 ### 2. データ検索
 - 期間選択: 開始日時と終了日時を指定
@@ -86,26 +60,10 @@ npm run dev
 
 ## 定期実行設定
 
-### Docker環境での自動実行
-```bash
-# コンテナ内のcronが自動的にデータを取得
-# 設定は docker/crontab で管理
-```
-
-### 手動環境でのCron設定例
-```bash
-# 5分ごとにデータを取得（推奨）
-*/5 * * * * cd /path/to/project/backend && /usr/bin/python scraper_cron.py
-
-# または30分間隔でデータを取得
-0,30 * * * * cd /path/to/project/backend && /usr/bin/python scraper_cron.py
-```
-
-### Pythonスクリプト例
-```python
-# backend/scraper_cron.py を直接実行
-python backend/scraper_cron.py
-```
+### Docker環境での自動実行（推奨）
+コンテナ内のcronが自動的にデータを取得するように設定されています。
+- 開発環境: 設定不要
+- 本番環境: 設定不要（`docker/crontab`の設定が適用されます）
 
 ## 技術仕様
 
@@ -130,7 +88,7 @@ python backend/scraper_cron.py
 
 ### データベース
 - SQLite (weather_data.db)
-- 自動的にプロジェクトディレクトリに作成されます
+- 自動的にプロジェクトディレクトリ(`data/`)に作成されます
 
 ## データ形式
 
@@ -150,19 +108,21 @@ python backend/scraper_cron.py
 
 ## 開発・カスタマイズ
 
-### 開発環境でのサーバー起動
-1. Pythonバックエンドサーバーを起動: `python backend/app.py`
-2. フロントエンド開発サーバーを起動: `npm run dev`
+### 新しい観測地点の追加
+`backend/app.py` の `WeatherScraper.stations` 配列に新しい地点を追加してください。
 
-### 本番環境でのデプロイ
-```bash
-# Docker Composeを使用
-docker-compose -f docker-compose.prod.yml up -d
+### APIエンドポイント
+- `GET /api/weather/latest` - 最新データ取得
+- `GET /api/weather/data` - 期間指定データ取得
+- `POST /api/weather/scrape` - データスクレイピング実行
+- `GET /api/stations` - 観測地点情報取得
+- `GET /api/weather/stats` - データベース統計情報
 
-# または個別のDockerfileを使用
-docker build -t isewan-weather .
-docker run -d -p 8000:8000 isewan-weather
-```
+### 環境変数
+- `VITE_API_URL`: フロントエンドからアクセスするAPIのURL
+- `NGINX_HOST`: Nginxのホストアドレス
+- `NGINX_PORT`: Nginxのポート番号
+- `TZ`: タイムゾーン設定
 
 ### 新しい観測地点の追加
 `backend/app.py` の `WeatherScraper.stations` 配列に新しい地点を追加してください。
