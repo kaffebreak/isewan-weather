@@ -24,14 +24,12 @@ export const Dashboard: React.FC = () => {
   const [latestData, setLatestData] = useState<WeatherData[]>([]);
   const [recentData, setRecentData] = useState<WeatherData[]>([]);
   const [selectedStation, setSelectedStation] = useState(DEFAULT_STATION_CODE);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [lastScraped, setLastScraped] = useState<Date | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const loadLatestData = useCallback(async () => {
     try {
       const data = await apiService.getLatestData();
       setLatestData(data);
-      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error loading latest data:', error);
     }
@@ -52,28 +50,28 @@ export const Dashboard: React.FC = () => {
     }
   }, []);
 
-  const loadLastScrapedTime = useCallback(async () => {
+  const loadLastUpdatedTime = useCallback(async () => {
     try {
-      const response = await apiService.getLastScrapedTime();
-      if (response.last_scraped) setLastScraped(new Date(response.last_scraped));
+      const response = await apiService.getLastUpdatedTime();
+      setLastUpdated(response.last_updated);
     } catch (error) {
-      console.error('Error loading last scraped time:', error);
+      console.error('Error loading last updated time:', error);
     }
   }, []);
 
   useEffect(() => {
     void loadLatestData();
     void loadRecentData(selectedStation);
-    void loadLastScrapedTime();
+    void loadLastUpdatedTime();
 
     const interval = window.setInterval(() => {
       void loadLatestData();
       void loadRecentData(selectedStation);
-      void loadLastScrapedTime();
+      void loadLastUpdatedTime();
     }, TIME_CONSTANTS.REFRESH_INTERVAL);
 
     return () => window.clearInterval(interval);
-  }, [loadLastScrapedTime, loadLatestData, loadRecentData, selectedStation]);
+  }, [loadLastUpdatedTime, loadLatestData, loadRecentData, selectedStation]);
 
   const selectedStationName = selectedStation
     ? latestData.find(data => data.station_code === selectedStation)?.station_name ??
@@ -156,13 +154,6 @@ export const Dashboard: React.FC = () => {
             </div>
           ))}
         </dl>
-        {lastScraped && (
-          <div className="border-t border-slate-200 px-5 py-3 sm:px-6">
-            <p className="text-xs text-slate-500">
-              最終スクレイピング: {lastScraped.toLocaleString('ja-JP')}
-            </p>
-          </div>
-        )}
       </section>
     </div>
   );

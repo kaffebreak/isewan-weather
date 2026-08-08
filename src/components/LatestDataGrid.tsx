@@ -21,8 +21,17 @@ const getOrderedStations = (data: WeatherData[]): WeatherData[] => {
 interface LatestDataGridProps {
   data: WeatherData[];
   onStationClick: (stationCode: string) => void;
-  lastUpdated?: Date | null;
+  lastUpdated?: string | null;
 }
+
+const formatDatabaseTimestamp = (timestamp: string) => {
+  const [datePart, timePart = ''] = timestamp.replace(' ', 'T').split('T');
+  const [, month = '', day = ''] = datePart.split('-');
+  const [hour = '', minute = ''] = timePart.split(':');
+
+  if (!month || !day || !hour || !minute) return timestamp;
+  return `${Number(month)}月${Number(day)}日 ${hour}:${minute}`;
+};
 
 export const LatestDataGrid: React.FC<LatestDataGridProps> = ({
   data,
@@ -53,12 +62,7 @@ export const LatestDataGrid: React.FC<LatestDataGridProps> = ({
         {lastUpdated && (
           <div className="flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-500 shadow-sm">
             <Clock className="h-3.5 w-3.5 text-blue-600" aria-hidden="true" />
-            最終更新: {lastUpdated.toLocaleString('ja-JP', {
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
+            DB最終更新: {formatDatabaseTimestamp(lastUpdated)}
           </div>
         )}
       </div>

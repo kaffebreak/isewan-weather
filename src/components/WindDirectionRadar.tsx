@@ -113,23 +113,32 @@ export const WindDirectionRadar: React.FC<WindDirectionRadarProps> = ({
       className="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
       aria-labelledby="wind-direction-heading"
     >
-      <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
-        <div className="flex items-center gap-3">
+      <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
             <Compass className="h-4 w-4" aria-hidden="true" />
           </span>
-          <div>
+          <div className="min-w-0">
             <h2 id="wind-direction-heading" className="font-semibold text-slate-900">
               風配図
             </h2>
-            <p className="mt-0.5 text-xs text-slate-500">
-              {stationName}・{periodLabel}・16方位
+            <p
+              className="mt-0.5 truncate text-xs text-slate-600"
+              title={`${stationName}・16方位`}
+            >
+              {stationName}・16方位
+            </p>
+            <p
+              className="mt-0.5 truncate text-[11px] leading-4 text-slate-500"
+              title={periodLabel}
+            >
+              {periodLabel}
             </p>
           </div>
         </div>
 
-        <div className="text-right">
-          <p className="text-xs text-slate-500">最多風向</p>
+        <div className="min-w-14 shrink-0 text-right">
+          <p className="whitespace-nowrap text-xs text-slate-500">最多風向</p>
           <p className="mt-0.5 text-sm font-semibold text-slate-900">
             {totalDirections > 0 ? dominantDirection : '-'}
           </p>

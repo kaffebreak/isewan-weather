@@ -169,7 +169,16 @@ class WeatherDatabase:
         conn.close()
         
         return [dict(zip(WEATHER_COLUMNS, row)) for row in rows]
-    
+
+    def get_last_updated_at(self):
+        """Return the time of the most recent write to the weather data table."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT MAX(created_at) FROM weather_data')
+        last_updated_at = cursor.fetchone()[0]
+        conn.close()
+        return last_updated_at
+
     def get_data_count(self, start_date=None, end_date=None, station_code=None):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

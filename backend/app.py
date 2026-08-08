@@ -154,13 +154,16 @@ class WeatherAPIHandler(BaseHTTPRequestHandler):
                 self.send_json_response(data)
                 
             elif path == '/api/weather/last-scraped':
-                last_record = self.db.get_latest_data()
-                if last_record:
-                    self.send_json_response({
-                        'last_scraped': last_record[0]['created_at']
-                    })
-                else:
-                    self.send_json_response({'last_scraped': None})
+                # Kept for backward compatibility. This value represents the
+                # latest database write, not the time of a scrape attempt.
+                self.send_json_response({
+                    'last_scraped': self.db.get_last_updated_at()
+                })
+
+            elif path == '/api/weather/last-updated':
+                self.send_json_response({
+                    'last_updated': self.db.get_last_updated_at()
+                })
                 
             elif path == '/api/stations':
                 self.send_json_response(self.scraper.stations)

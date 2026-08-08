@@ -86,8 +86,8 @@ export class ApiService {
     );
   }
 
-  async getLastScrapedTime(): Promise<{ last_scraped: string | null }> {
-    return this.fetchWithErrorHandling(`${API_BASE_URL}/api/weather/last-scraped`);
+  async getLastUpdatedTime(): Promise<{ last_updated: string | null }> {
+    return this.fetchWithErrorHandling(`${API_BASE_URL}/api/weather/last-updated`);
   }
 }
 
