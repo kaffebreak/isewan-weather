@@ -25,16 +25,21 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center gap-2">
-        <Calendar className="w-5 h-5" />
-        期間選択
-      </h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <section className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="date-range-heading">
+      <div className="mb-5 flex items-center gap-3">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <Calendar className="h-4 w-4" aria-hidden="true" />
+        </span>
         <div>
-          <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
-            <Clock className="w-4 h-4 inline mr-1" />
+          <h3 id="date-range-heading" className="font-semibold text-slate-900">期間選択</h3>
+          <p className="mt-0.5 text-xs text-slate-500">取得するデータの開始・終了日時</p>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <label htmlFor="startDate" className="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-700">
+            <Clock className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
             開始時間
           </label>
           <input
@@ -42,13 +47,13 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
             id="startDate"
             value={startDate}
             onChange={handleStartDateChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
           />
         </div>
         
         <div>
-          <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
-            <Clock className="w-4 h-4 inline mr-1" />
+          <label htmlFor="endDate" className="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-700">
+            <Clock className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
             終了日時
           </label>
           <input
@@ -56,12 +61,10 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
             id="endDate"
             value={endDate}
             onChange={handleEndDateChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
           />
         </div>
       </div>
-      
-
-    </div>
+    </section>
   );
 };

@@ -6,7 +6,21 @@ export interface WeatherData {
   wind_direction?: string;
   wind_speed?: number;
   wave_height?: number;
+  wind_status?: 'weak';
   created_at?: string;
+}
+
+export interface WindChartData {
+  trend_data: WeatherData[];
+  summary: {
+    total_records: number;
+    latest_wind_speed: number | null;
+    average_wind_speed: number | null;
+    max_wind_speed: number | null;
+    weak_wind_count: number;
+    is_sampled: boolean;
+  };
+  direction_counts: Record<string, number>;
 }
 
 export interface Station {

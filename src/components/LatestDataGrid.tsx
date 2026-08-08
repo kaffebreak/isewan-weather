@@ -31,21 +31,28 @@ export const LatestDataGrid: React.FC<LatestDataGridProps> = ({
 }) => {
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-8 text-center">
-        <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-500">最新データがありません</p>
-        <p className="text-sm text-gray-400 mt-2">データは自動的に更新されます</p>
+      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+        <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100">
+          <AlertCircle className="h-5 w-5 text-slate-500" aria-hidden="true" />
+        </div>
+        <p className="font-medium text-slate-800">最新データがありません</p>
+        <p className="mt-1 text-sm text-slate-500">データは自動的に更新されます</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">最新観測データ</h2>
+    <section className="space-y-5" aria-labelledby="latest-data-heading">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">Overview</p>
+          <h2 id="latest-data-heading" className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
+            最新観測データ
+          </h2>
+        </div>
         {lastUpdated && (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Clock className="w-4 h-4" />
+          <div className="flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-500 shadow-sm">
+            <Clock className="h-3.5 w-3.5 text-blue-600" aria-hidden="true" />
             最終更新: {lastUpdated.toLocaleString('ja-JP', {
               month: 'short',
               day: 'numeric',
@@ -56,7 +63,7 @@ export const LatestDataGrid: React.FC<LatestDataGridProps> = ({
         )}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {getOrderedStations(data).map((stationData) => (
           <LatestDataCard
             key={stationData.station_code}
@@ -66,11 +73,12 @@ export const LatestDataGrid: React.FC<LatestDataGridProps> = ({
         ))}
       </div>
       
-      <div className="text-center">
-        <p className="text-sm text-gray-500">
+      <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+        <span className="h-1.5 w-1.5 rounded-full bg-blue-600" aria-hidden="true" />
+        <p>
           データは5分間隔で自動更新されます
         </p>
       </div>
-    </div>
+    </section>
   );
 };

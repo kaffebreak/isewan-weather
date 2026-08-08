@@ -30,7 +30,7 @@ export function exportToCSV(data: WeatherData[], filename: string = 'weather_dat
       `"${row.station_name}"`,
       row.station_code,
       formatTimestampForCSV(row.timestamp),
-      row.wind_direction || '',
+      row.wind_status === 'weak' ? '風弱く' : row.wind_direction || '',
       row.wind_speed || '',
       row.wave_height || '',
       formatTimestampForCSV(row.created_at || '')
@@ -118,12 +118,12 @@ export function exportToCSVForMarine(data: WeatherData[], filename: string = 'ma
       headers.join(','),
       ...Array.from(groupedData.entries()).map(([timestamp, stations]) => [
         formatTimestampForCSV(timestamp),
-        stations.iragomisaki?.wind_direction || '',
+        stations.iragomisaki?.wind_status === 'weak' ? '風弱く' : stations.iragomisaki?.wind_direction || '',
         stations.iragomisaki?.wind_speed || '',
-        stations.iragosuido?.wind_direction || '',
+        stations.iragosuido?.wind_status === 'weak' ? '風弱く' : stations.iragosuido?.wind_direction || '',
         stations.iragosuido?.wind_speed || '',
         stations.iragosuido?.wave_height || '',
-        stations.daiosaki?.wind_direction || '',
+        stations.daiosaki?.wind_status === 'weak' ? '風弱く' : stations.daiosaki?.wind_direction || '',
         stations.daiosaki?.wind_speed || '',
         stations.daiosaki?.wave_height || ''
       ].join(','))

@@ -1,4 +1,4 @@
-import { WeatherData, Station } from '../types/weather';
+import { WeatherData, Station, WindChartData } from '../types/weather';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -32,14 +32,16 @@ export class ApiService {
     startDate?: string,
     endDate?: string,
     stationCode?: string,
-    limit?: number
+    limit?: number,
+    offset?: number
   ): Promise<WeatherData[]> {
     const params = new URLSearchParams();
 
     if (startDate) params.append('start_date', startDate);
     if (endDate) params.append('end_date', endDate);
     if (stationCode) params.append('station_code', stationCode);
-    if (limit) params.append('limit', limit.toString());
+    if (limit !== undefined) params.append('limit', limit.toString());
+    if (offset !== undefined) params.append('offset', offset.toString());
 
     const url = `${API_BASE_URL}/api/weather/data${params.toString() ? '?' + params.toString() : ''}`;
     return this.fetchWithErrorHandling(url);
@@ -55,8 +57,33 @@ export class ApiService {
     return this.fetchWithErrorHandling(`${API_BASE_URL}/api/stations`);
   }
 
-  async getStats(): Promise<{ total_records: number }> {
-    return this.fetchWithErrorHandling(`${API_BASE_URL}/api/weather/stats`);
+  async getStats(
+    startDate?: string,
+    endDate?: string,
+    stationCode?: string
+  ): Promise<{ total_records: number }> {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (stationCode) params.append('station_code', stationCode);
+
+    const url = `${API_BASE_URL}/api/weather/stats${params.toString() ? '?' + params.toString() : ''}`;
+    return this.fetchWithErrorHandling(url);
+  }
+
+  async getWindChartData(
+    startDate: string,
+    endDate: string,
+    stationCode: string
+  ): Promise<WindChartData> {
+    const params = new URLSearchParams({
+      start_date: startDate,
+      end_date: endDate,
+      station_code: stationCode,
+    });
+    return this.fetchWithErrorHandling(
+      `${API_BASE_URL}/api/weather/wind-chart?${params.toString()}`
+    );
   }
 
   async getLastScrapedTime(): Promise<{ last_scraped: string | null }> {

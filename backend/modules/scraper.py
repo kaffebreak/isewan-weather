@@ -132,7 +132,8 @@ class WeatherScraper:
                 
                 # Parse wind speed
                 wind_speed = None
-                if wind_speed_text and wind_speed_text != '-':
+                is_weak_wind = '風弱く' in wind_speed_text
+                if wind_speed_text and wind_speed_text != '-' and not is_weak_wind:
                     try:
                         # Extract numeric value (handle formats like "8m", "8.5m/s", etc.)
                         numeric_match = re.search(r'(\d+\.?\d*)', wind_speed_text)
@@ -159,7 +160,8 @@ class WeatherScraper:
                     'timestamp': timestamp.strftime('%Y-%m-%d %H:%M:%S'),
                     'wind_direction': wind_dir_text if wind_dir_text and wind_dir_text != '-' else None,
                     'wind_speed': wind_speed,
-                    'wave_height': wave_height
+                    'wave_height': wave_height,
+                    'wind_status': 'weak' if is_weak_wind else None
                 }
                 
                 data.append(weather_data)
@@ -220,7 +222,8 @@ class WeatherScraper:
                         'timestamp': ref_time,
                         'wind_direction': None,
                         'wind_speed': None,
-                        'wave_height': None
+                        'wave_height': None,
+                        'wind_status': None
                     })
         
         print(f"Aligned {len(aligned_data)} records to reference time")

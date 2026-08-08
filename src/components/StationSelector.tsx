@@ -18,60 +18,92 @@ export const StationSelector: React.FC<StationSelectorProps> = ({
   isMarineMode = false,
   onMarineModeChange
 }) => {
+  const selectStation = (stationCode: string) => {
+    onMarineModeChange?.(false);
+    onStationChange(stationCode);
+  };
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center gap-2">
-        <MapPin className="w-5 h-5" />
-        観測地点選択
-      </h3>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-          <input
-            type="radio"
-            name="station"
-            value=""
-            checked={selectedStation === ''}
-            onChange={(e) => onStationChange(e.target.value)}
-            className="mr-3 text-blue-600"
-          />
-          <span className="text-sm font-medium">全地点</span>
-        </label>
-
-        {STATIONS.map((station) => (
-          <label
-            key={station.code}
-            className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-          >
-            <input
-              type="radio"
-              name="station"
-              value={station.code}
-              checked={selectedStation === station.code}
-              onChange={(e) => onStationChange(e.target.value)}
-              className="mr-3 text-blue-600"
-            />
-            <span className="text-sm font-medium">{station.name}</span>
-          </label>
-        ))}
-
-        {onMarineModeChange && (
-          <label className="flex items-center p-3 border-2 border-teal-500 rounded-lg cursor-pointer hover:bg-teal-50 col-span-full">
-            <input
-              type="radio"
-              name="station"
-              value={MARINE_MODE_VALUE}
-              checked={isMarineMode}
-              onChange={() => {
-                onMarineModeChange(true);
-                onStationChange(''); // Clear individual station selection
-              }}
-              className="mr-3 text-teal-600"
-            />
-            <span className="text-sm font-medium text-teal-700">湾内乗下船用（3箇所横並び）</span>
-          </label>
-        )}
+    <section className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="station-selector-heading">
+      <div className="mb-5 flex items-center gap-3">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <MapPin className="h-4 w-4" aria-hidden="true" />
+        </span>
+        <div>
+          <h3 id="station-selector-heading" className="font-semibold text-slate-900">観測地点選択</h3>
+          <p className="mt-0.5 text-xs text-slate-500">対象にする地点を選択</p>
+        </div>
       </div>
-    </div>
+
+      <fieldset>
+        <legend className="sr-only">観測地点</legend>
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+          <label className={`flex min-h-12 cursor-pointer items-center rounded-lg border px-3.5 py-3 transition-colors ${
+            selectedStation === '' && !isMarineMode
+              ? 'border-blue-300 bg-blue-50 text-blue-900'
+              : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+          }`}>
+            <input
+              type="radio"
+              name="station"
+              value=""
+              checked={selectedStation === '' && !isMarineMode}
+              onChange={() => selectStation('')}
+              className="mr-3 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-600"
+            />
+            <span className="text-sm font-medium">全地点</span>
+          </label>
+
+          {STATIONS.map((station) => {
+            const isSelected = selectedStation === station.code && !isMarineMode;
+
+            return (
+              <label
+                key={station.code}
+                className={`flex min-h-12 cursor-pointer items-center rounded-lg border px-3.5 py-3 transition-colors ${
+                  isSelected
+                    ? 'border-blue-300 bg-blue-50 text-blue-900'
+                    : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="station"
+                  value={station.code}
+                  checked={isSelected}
+                  onChange={() => selectStation(station.code)}
+                  className="mr-3 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-600"
+                />
+                <span className="text-sm font-medium">{station.name}</span>
+              </label>
+            );
+          })}
+
+          {onMarineModeChange && (
+            <label className={`col-span-full flex min-h-12 cursor-pointer items-center rounded-lg border px-3.5 py-3 transition-colors ${
+              isMarineMode
+                ? 'border-blue-300 bg-blue-50 text-blue-900'
+                : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+            }`}>
+              <input
+                type="radio"
+                name="station"
+                value={MARINE_MODE_VALUE}
+                checked={isMarineMode}
+                onChange={() => {
+                  onMarineModeChange(true);
+                  onStationChange('');
+                }}
+                className="mr-3 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-600"
+              />
+              <span>
+                <span className="block text-sm font-medium">湾内乗下船用</span>
+                <span className="mt-0.5 block text-xs text-slate-500">3箇所のデータを横並びで出力</span>
+              </span>
+            </label>
+          )}
+        </div>
+      </fieldset>
+    </section>
   );
 };

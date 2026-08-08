@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 import json
 import os
+from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
-from modules.database import WeatherDatabase
+from modules.database import MAX_PAGE_SIZE, MAX_QUERY_OFFSET, WeatherDatabase
 from modules.scraper import WeatherScraper
+
+
+class RequestValidationError(ValueError):
+    """Raised when an API query parameter cannot be accepted."""
+
 
 class WeatherAPIHandler(BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -44,11 +50,55 @@ class WeatherAPIHandler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         self.wfile.write(json.dumps(data, ensure_ascii=False).encode('utf-8'))
+
+    @staticmethod
+    def parse_datetime_parameter(value, name):
+        if not value:
+            return None
+
+        try:
+            # フロントエンドからの日時は既に日本時間なので、そのまま使用
+            parsed = datetime.fromisoformat(value.replace('T', ' '))
+        except (TypeError, ValueError) as error:
+            raise RequestValidationError(
+                f'{name} must be a valid ISO 8601 date-time'
+            ) from error
+
+        return parsed.strftime('%Y-%m-%d %H:%M:%S')
+
+    @staticmethod
+    def parse_integer_parameter(value, name, minimum, maximum=None):
+        if value is None or value == '':
+            if value == '':
+                raise RequestValidationError(f'{name} must be an integer')
+            return None
+
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError) as error:
+            raise RequestValidationError(f'{name} must be an integer') from error
+
+        if parsed < minimum:
+            raise RequestValidationError(f'{name} must be at least {minimum}')
+        if maximum is not None and parsed > maximum:
+            raise RequestValidationError(f'{name} must be at most {maximum}')
+
+        return parsed
+
+    def get_weather_filters(self, query_params):
+        start_date = self.parse_datetime_parameter(
+            query_params.get('start_date', [None])[0], 'start_date'
+        )
+        end_date = self.parse_datetime_parameter(
+            query_params.get('end_date', [None])[0], 'end_date'
+        )
+        station_code = query_params.get('station_code', [None])[0] or None
+        return start_date, end_date, station_code
     
     def do_GET(self):
         parsed_url = urlparse(self.path)
         path = parsed_url.path
-        query_params = parse_qs(parsed_url.query)
+        query_params = parse_qs(parsed_url.query, keep_blank_values=True)
         
         try:
             if path == '/api/weather/latest':
@@ -56,34 +106,52 @@ class WeatherAPIHandler(BaseHTTPRequestHandler):
                 self.send_json_response(data)
                 
             elif path == '/api/weather/data':
-                start_date = query_params.get('start_date', [None])[0]
-                end_date = query_params.get('end_date', [None])[0]
-                station_code = query_params.get('station_code', [None])[0]
-                limit = query_params.get('limit', [None])[0]
-                
-                # フロントエンドからの日時は既に日本時間なので、そのまま使用
-                if start_date:
-                    from datetime import datetime
-                    dt = datetime.fromisoformat(start_date.replace('T', ' '))
-                    start_date = dt.strftime('%Y-%m-%d %H:%M:%S')
-                
-                if end_date:
-                    from datetime import datetime
-                    dt = datetime.fromisoformat(end_date.replace('T', ' '))
-                    end_date = dt.strftime('%Y-%m-%d %H:%M:%S')
-                
-                print(f"DEBUG: Using JST directly - start_date: {start_date}, end_date: {end_date}, station_code: {station_code}")
-                
-                if limit:
-                    limit = int(limit)
-                
-                data = self.db.get_weather_data(start_date, end_date, station_code, limit)
-                print(f"DEBUG: Found {len(data)} records")
+                start_date, end_date, station_code = self.get_weather_filters(
+                    query_params
+                )
+                limit = self.parse_integer_parameter(
+                    query_params.get('limit', [None])[0],
+                    'limit',
+                    minimum=1,
+                    maximum=MAX_PAGE_SIZE,
+                )
+                offset = self.parse_integer_parameter(
+                    query_params.get('offset', [None])[0],
+                    'offset',
+                    minimum=0,
+                    maximum=MAX_QUERY_OFFSET,
+                )
+
+                data = self.db.get_weather_data(
+                    start_date,
+                    end_date,
+                    station_code,
+                    limit,
+                    offset or 0,
+                )
                 self.send_json_response(data)
                 
             elif path == '/api/weather/stats':
-                count = self.db.get_data_count()
+                start_date, end_date, station_code = self.get_weather_filters(
+                    query_params
+                )
+                count = self.db.get_data_count(
+                    start_date, end_date, station_code
+                )
                 self.send_json_response({'total_records': count})
+
+            elif path == '/api/weather/wind-chart':
+                start_date, end_date, station_code = self.get_weather_filters(
+                    query_params
+                )
+                if not station_code:
+                    raise RequestValidationError(
+                        'station_code is required for wind charts'
+                    )
+                data = self.db.get_wind_chart_data(
+                    start_date, end_date, station_code
+                )
+                self.send_json_response(data)
                 
             elif path == '/api/weather/last-scraped':
                 last_record = self.db.get_latest_data()
@@ -161,6 +229,8 @@ class WeatherAPIHandler(BaseHTTPRequestHandler):
             else:
                 self.send_json_response({'error': 'Not found'}, 404)
                 
+        except RequestValidationError as e:
+            self.send_json_response({'error': str(e)}, 400)
         except Exception as e:
             print(f"Error handling GET request: {e}")
             self.send_json_response({'error': str(e)}, 500)
@@ -193,10 +263,10 @@ class WeatherAPIHandler(BaseHTTPRequestHandler):
             print(f"Error handling POST request: {e}")
             self.send_json_response({'error': str(e)}, 500)
 
-def run_server(port=8000):
-    server_address = ('0.0.0.0', port)
+def run_server(port=8000, host='0.0.0.0'):
+    server_address = (host, port)
     httpd = HTTPServer(server_address, WeatherAPIHandler)
-    print(f"Starting Python weather API server on port {port}")
+    print(f"Starting Python weather API server on {host}:{port}")
     data_dir = os.path.join(os.path.dirname(__file__), 'data')
     print(f"Database will be saved as: {os.path.join(data_dir, 'weather_data.db')}")
     print("Available endpoints:")
@@ -213,10 +283,11 @@ def run_server(port=8000):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
+    host = os.environ.get('HOST', '0.0.0.0')
     
     data_dir = os.path.join(os.path.dirname(__file__), 'data')
     logs_dir = os.path.join(os.path.dirname(__file__), 'logs')
     os.makedirs(data_dir, exist_ok=True)
     os.makedirs(logs_dir, exist_ok=True)
     
-    run_server(port)
+    run_server(port, host)
