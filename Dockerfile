@@ -14,11 +14,16 @@ RUN npm run build
 
 FROM python:3.11-slim
 
+ENV TZ=Asia/Tokyo
+
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     cron \
     sqlite3 \
     curl \
+    tzdata \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
+    && echo $TZ > /etc/timezone \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user

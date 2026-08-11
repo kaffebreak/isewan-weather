@@ -1,7 +1,8 @@
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 
+JST = timezone(timedelta(hours=9))
 MAX_PAGE_SIZE = 500
 MAX_QUERY_OFFSET = 1_000_000
 MAX_CHART_POINTS = 500
@@ -74,7 +75,7 @@ class WeatherDatabase:
                     data.get('wind_speed'),
                     data.get('wave_height'),
                     data.get('wind_status'),
-                    datetime.now().isoformat()
+                    datetime.now(JST).replace(tzinfo=None).isoformat()
                 ))
                 saved_count += 1
             except Exception as e:
@@ -174,8 +175,14 @@ class WeatherDatabase:
         """Return the time of the most recent write to the weather data table."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute('SELECT MAX(created_at) FROM weather_data')
-        last_updated_at = cursor.fetchone()[0]
+        cursor.execute('''
+            SELECT created_at
+            FROM weather_data
+            ORDER BY id DESC
+            LIMIT 1
+        ''')
+        row = cursor.fetchone()
+        last_updated_at = row[0] if row else None
         conn.close()
         return last_updated_at
 
