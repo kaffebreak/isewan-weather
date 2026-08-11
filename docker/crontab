@@ -1,2 +1,0 @@
-*/5 * * * * root cd /app && /usr/local/bin/python scraper_cron.py >> /app/logs/cron.log 2>&1
-0 2 * * * root find /app/logs -name "*.log" -mtime +7 -delete

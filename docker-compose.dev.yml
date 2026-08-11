@@ -2,24 +2,18 @@ version: '3.8'
 
 services:
   isewan-weather-dev:
-    build: 
+    build:
       context: .
-      dockerfile: Dockerfile
-      target: development
     container_name: isewan-weather-dev
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
       - ./data:/app/data
-      - ./logs:/app/logs
-      - ./.env:/app/.env
     environment:
       - PYTHONUNBUFFERED=1
       - VITE_API_URL=http://localhost:8000
-      - TZ=Asia/Tokyo
-      - FLASK_ENV=development
-      - FLASK_DEBUG=1
+      - TZ=${TZ:-Asia/Tokyo}
     restart: unless-stopped
     command: ["python", "-u", "app.py"]
 
@@ -30,6 +24,7 @@ services:
       - "80:80"
     volumes:
       - ./docker/nginx.dev.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/html/menu.html:/usr/share/nginx/html/menu.html:ro
     depends_on:
       - isewan-weather-dev
     restart: unless-stopped

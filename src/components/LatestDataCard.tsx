@@ -1,6 +1,7 @@
 import React from 'react';
 import { WeatherData } from '../types/weather';
 import { Wind, Waves, MapPin, Clock } from 'lucide-react';
+import { parseJstTimestamp } from '../utils/datetime';
 
 interface LatestDataCardProps {
   data: WeatherData;
@@ -20,7 +21,7 @@ export const LatestDataCard: React.FC<LatestDataCardProps> = ({ data, onClick })
   };
 
   const formatTime = (timestamp: string): string => {
-    return new Date(timestamp).toLocaleString('ja-JP', {
+    return parseJstTimestamp(timestamp).toLocaleString('ja-JP', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',

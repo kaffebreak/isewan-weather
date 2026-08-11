@@ -3,11 +3,6 @@ dist
 .git
 .gitignore
 README.md
-README_DEPLOY.md
-deploy/
 .env
 .env.local
-.env.example
-logs/
 data/
-ssl/

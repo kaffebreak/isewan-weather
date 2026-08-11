@@ -18,7 +18,6 @@ ENV TZ=Asia/Tokyo
 
 # Install system dependencies
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    cron \
     sqlite3 \
     curl \
     tzdata \
@@ -26,7 +25,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     && echo $TZ > /etc/timezone \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
+# Non-root user the app actually runs as (see start.sh: the container starts
+# as root only to fix up bind-mounted volume ownership, then drops to this
+# user before exec'ing the long-running server).
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 WORKDIR /app
@@ -41,22 +42,12 @@ COPY backend/ ./
 # Copy built frontend
 COPY --from=frontend-builder /app/dist ./static
 
-# Create data and logs directories with proper permissions
-RUN mkdir -p /app/data /app/logs && \
+RUN mkdir -p /app/data && \
     chown -R appuser:appuser /app
-
-# Copy cron job
-COPY docker/crontab /etc/cron.d/isewan-weather
-RUN chmod 0644 /etc/cron.d/isewan-weather && \
-    chown root:root /etc/cron.d/isewan-weather
 
 # Copy startup script
 COPY docker/start.sh /start.sh
-RUN chmod +x /start.sh && \
-    chown appuser:appuser /start.sh
-
-# Switch to non-root user
-USER appuser
+RUN chmod +x /start.sh
 
 EXPOSE 8000
 

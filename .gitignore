@@ -42,7 +42,6 @@ venv.bak/
 *.sqlite
 *.sqlite3
 backend/data/
-backend/logs/
 
 # Environment
 .env.local

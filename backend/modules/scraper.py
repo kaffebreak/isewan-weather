@@ -3,7 +3,7 @@ import os
 import requests
 from bs4 import BeautifulSoup
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 
 class HTMLTableParser:
@@ -52,17 +52,15 @@ class WeatherScraper:
             }
             response = requests.get(url, headers=headers, timeout=15)
             response.raise_for_status()
-            
-            # Try different encodings
-            for encoding in ['utf-8', 'shift_jis', 'euc-jp']:
-                try:
-                    response.encoding = encoding
-                    return response.text
-                except UnicodeDecodeError:
-                    continue
-            
-            # Fallback to utf-8 with errors='ignore'
-            response.encoding = 'utf-8'
+
+            # Some of these government sites don't declare a charset in
+            # their Content-Type header, in which case requests leaves
+            # response.encoding unset. Fall back to content-based detection
+            # (requests' apparent_encoding) instead of assuming UTF-8, which
+            # would silently mangle Shift-JIS/EUC-JP pages.
+            if response.encoding is None:
+                response.encoding = response.apparent_encoding
+
             return response.text
         except Exception as e:
             print(f"Failed to fetch {url}: {e}")
@@ -125,6 +123,12 @@ class WeatherScraper:
                                 timestamp = timestamp.replace(year=year, month=month, day=day)
                             except (ValueError, IndexError):
                                 pass  # Use current date if date parsing fails
+                        elif timestamp > current_date + timedelta(minutes=5):
+                            # No date column: a scraped time later than "now"
+                            # (e.g. a 23:58 reading fetched at 00:03) means
+                            # the source page hasn't rolled over yet and the
+                            # reading actually belongs to yesterday.
+                            timestamp -= timedelta(days=1)
                     except ValueError:
                         continue
                 else:

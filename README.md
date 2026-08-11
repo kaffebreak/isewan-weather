@@ -45,11 +45,21 @@ docker-compose -f docker-compose.dev.yml up
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
+### 3. アクセス
+- `http://10.10.10.11/` : 本システムと船舶管制システムへのリンクを並べたメニューページ
+- `http://10.10.10.11/weather` : 気象データ管理システム本体（このアプリ）
+
+`/`直下ではなく`/weather`配下で配信されるのは、同じサーバー上で別途稼働している船舶管制システム(ポート3000, 別リポジトリ)と共存させるためです。
+
 ## 使用方法
 
 ### 1. データ取得
-「データ取得」ボタンをクリックして最新の気象データを収集します。
-初回起動時はデータが空のため、一度実行してください。
+アプリケーション起動後、5分間隔で自動的に気象データが収集されます（後述）。
+初回起動直後はデータが空のため、最初の自動取得（最大5分）をお待ちください。
+すぐに取得したい場合は `POST /api/weather/scrape` を呼び出すと即座に手動実行できます。
+```bash
+curl -X POST http://<ホスト>:8000/api/weather/scrape
+```
 
 ### 2. データ検索
 - 期間選択: 開始日時と終了日時を指定
@@ -60,10 +70,9 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ## 定期実行設定
 
-### Docker環境での自動実行（推奨）
-コンテナ内のcronが自動的にデータを取得するように設定されています。
-- 開発環境: 設定不要
-- 本番環境: 設定不要（`docker/crontab`の設定が適用されます）
+### アプリ内蔵の自動実行（設定不要）
+Pythonサーバープロセス内のバックグラウンドスレッドが5分間隔で自動的にデータを取得します。
+外部のcronデーモンには依存しないため、開発・本番のどちらの環境でも追加設定なしで動作します。
 
 ## 技術仕様
 
@@ -72,7 +81,7 @@ docker-compose -f docker-compose.prod.yml up -d
 - Vite (ビルドツール)
 - Tailwind CSS
 - Lucide React (アイコン)
-- Axios (HTTP クライアント)
+- Fetch API (HTTP クライアント)
 
 ### バックエンド
 - Python 3.11
@@ -109,28 +118,12 @@ docker-compose -f docker-compose.prod.yml up -d
 ## 開発・カスタマイズ
 
 ### 新しい観測地点の追加
-`backend/app.py` の `WeatherScraper.stations` 配列に新しい地点を追加してください。
+`backend/stations.json` に新しい地点の情報（`name`・`code`・`url`・`has_wave_height`・`update_interval`）を追加してください。
 
 ### APIエンドポイント
 - `GET /api/weather/latest` - 最新データ取得
 - `GET /api/weather/data` - 期間指定データ取得
-- `POST /api/weather/scrape` - データスクレイピング実行
-- `GET /api/stations` - 観測地点情報取得
-- `GET /api/weather/stats` - データベース統計情報
-
-### 環境変数
-- `VITE_API_URL`: フロントエンドからアクセスするAPIのURL
-- `NGINX_HOST`: Nginxのホストアドレス
-- `NGINX_PORT`: Nginxのポート番号
-- `TZ`: タイムゾーン設定
-
-### 新しい観測地点の追加
-`backend/app.py` の `WeatherScraper.stations` 配列に新しい地点を追加してください。
-
-### APIエンドポイント
-- `GET /api/weather/latest` - 最新データ取得
-- `GET /api/weather/data` - 期間指定データ取得
-- `POST /api/weather/scrape` - データスクレイピング実行
+- `POST /api/weather/scrape` - データスクレイピング即時実行
 - `GET /api/stations` - 観測地点情報取得
 - `GET /api/weather/stats` - データベース統計情報
 

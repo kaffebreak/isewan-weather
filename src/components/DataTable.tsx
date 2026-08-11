@@ -1,6 +1,7 @@
 import React from 'react';
 import { WeatherData } from '../types/weather';
 import { Wind, Waves, MapPin, Inbox } from 'lucide-react';
+import { parseJstTimestamp } from '../utils/datetime';
 
 interface DataTableProps {
   data: WeatherData[];
@@ -81,7 +82,7 @@ export const DataTable: React.FC<DataTableProps> = ({ data, title = 'Weather Dat
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-5 py-3.5 text-sm tabular-nums text-slate-700 sm:px-6">
-                  {new Date(row.timestamp).toLocaleString('ja-JP', {
+                  {parseJstTimestamp(row.timestamp).toLocaleString('ja-JP', {
                     year: 'numeric',
                     month: '2-digit',
                     day: '2-digit',

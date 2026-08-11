@@ -43,21 +43,23 @@ if [ ! -f "$ENV_FILE" ]; then
     cp env.example "$ENV_FILE"
 fi
 
-mkdir -p data logs ssl
-chmod 755 data logs
+mkdir -p data
+chmod 755 data
 chmod 644 "$ENV_FILE"
 
 # 5. Nginx設定でドメイン名を更新
 echo "5. Nginx設定を更新中..."
 sed -i "s/10.10.10.11/$DOMAIN/g" docker/nginx.conf
 
+COMPOSE_FILE="docker-compose.prod.yml"
+
 # 6. Docker イメージをビルド
 echo "6. Dockerイメージをビルド中..."
-docker-compose build
+docker-compose -f "$COMPOSE_FILE" build
 
 # 7. コンテナを起動
 echo "7. コンテナを起動中..."
-docker-compose up -d
+docker-compose -f "$COMPOSE_FILE" up -d
 
 # 8. ヘルスチェック
 echo "8. サービスの起動を確認中..."
@@ -69,7 +71,7 @@ if curl -f http://localhost:8000/api/weather/stats > /dev/null 2>&1; then
     echo "✅ バックエンドAPIが正常に応答しています"
 else
     echo "❌ バックエンドAPIの起動に失敗しました"
-    docker-compose logs isewan-weather
+    docker-compose -f "$COMPOSE_FILE" logs isewan-weather
     exit 1
 fi
 
@@ -77,7 +79,7 @@ if curl -f http://$DOMAIN/health > /dev/null 2>&1; then
     echo "✅ Nginxが正常に応答しています"
 else
     echo "❌ Nginxの起動に失敗しました"
-    docker-compose logs nginx
+    docker-compose -f "$COMPOSE_FILE" logs nginx
     exit 1
 fi
 
@@ -86,10 +88,10 @@ echo "✅ 全てのサービスが正常に起動しました"
 echo "=== デプロイ完了 ==="
 echo ""
 echo "サービス確認:"
-echo "  docker-compose ps"
-echo "  docker-compose logs -f"
+echo "  docker-compose -f $COMPOSE_FILE ps"
+echo "  docker-compose -f $COMPOSE_FILE logs -f"
 echo ""
 echo "アクセス: http://$DOMAIN"
 echo ""
-echo "自動データ取得: 5分間隔で実行中"
-echo "ログ確認: docker-compose exec isewan-weather tail -f /app/logs/cron.log"
+echo "自動データ取得: 5分間隔で実行中(アプリ内蔵のバックグラウンドスレッド)"
+echo "ログ確認: docker-compose -f $COMPOSE_FILE logs -f isewan-weather"

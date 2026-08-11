@@ -1,4 +1,5 @@
 import { WeatherData } from '../types/weather';
+import { parseJstTimestamp } from './datetime';
 
 // エラーメッセージ
 const ERROR_MESSAGES = {
@@ -60,7 +61,7 @@ export function exportToCSV(data: WeatherData[], filename: string = 'weather_dat
 
 function formatTimestampForCSV(timestamp: string): string {
   if (!timestamp) return '';
-  const date = new Date(timestamp);
+  const date = parseJstTimestamp(timestamp);
   return date.toLocaleString('ja-JP', {
     year: 'numeric',
     month: '2-digit',

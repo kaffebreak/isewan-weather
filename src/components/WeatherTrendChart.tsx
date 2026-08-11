@@ -1,6 +1,7 @@
 import React from 'react';
 import { TrendingUp, Wind } from 'lucide-react';
 import { WeatherData } from '../types/weather';
+import { parseJstTimestamp } from '../utils/datetime';
 
 interface WeatherTrendChartProps {
   data: WeatherData[];
@@ -70,7 +71,7 @@ export const WeatherTrendChart: React.FC<WeatherTrendChartProps> = ({
   const plotWidth = CHART_WIDTH - PADDING.left - PADDING.right;
   const plotHeight = CHART_HEIGHT - PADDING.top - PADDING.bottom;
   const parseTimestamp = (timestamp: string) =>
-    new Date(timestamp.replace(' ', 'T')).getTime();
+    parseJstTimestamp(timestamp).getTime();
   const firstTimestamp = parseTimestamp(observations[0].timestamp);
   const lastTimestamp = parseTimestamp(
     observations[observations.length - 1].timestamp
@@ -97,7 +98,7 @@ export const WeatherTrendChart: React.FC<WeatherTrendChartProps> = ({
     observations[0].timestamp.slice(0, 10) !==
     observations[observations.length - 1].timestamp.slice(0, 10);
   const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp.replace(' ', 'T'));
+    const date = parseJstTimestamp(timestamp);
     return spansMultipleDays
       ? date.toLocaleString('ja-JP', {
           month: 'numeric',
