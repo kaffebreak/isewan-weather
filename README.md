@@ -36,7 +36,23 @@ cp env.example .env
 # デフォルト設定でも動作します
 ```
 
-### 2. Docker Composeを使用した起動（推奨）
+### 2. 共有ネットワークの作成（初回のみ）
+このnginxは `/weather` に加えて `/nagoya-control`・`/irago-control`
+（いずれも別リポジトリ、[kaffebreak/nagoya-control](https://github.com/kaffebreak/nagoya-control) /
+[kaffebreak/irago-schedule](https://github.com/kaffebreak/irago-schedule)）へもリバースプロキシする。
+それらのコンテナ名で名前解決できるよう、3システム共通の外部ネットワークを先に作成しておく。
+```bash
+docker network create isewan-edge
+```
+nagoya-control・irago-schedule 側の `docker-compose.yml` も同じ `isewan-edge`
+ネットワークに参加させ、ホストの80番を自分で公開しないよう変更する必要がある
+（80番はこのリポジトリのnginxだけが持つ）。詳細は各リポジトリ側の対応が必要。
+
+**ポートの規約**: 80/443はこのnginxの専用領域とし、リバースプロキシ先の
+バックエンドは内部ポート `8000` に統一する（isewan-weather・nagoya-control・
+irago-control とも8000で待ち受ける）。新しいシステムを追加する際もこれに揃える。
+
+### 3. Docker Composeを使用した起動（推奨）
 ```bash
 # 開発環境（ホットリロード有効）
 docker-compose -f docker-compose.dev.yml up
@@ -45,11 +61,13 @@ docker-compose -f docker-compose.dev.yml up
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
-### 3. アクセス
+### 4. アクセス
 - `http://10.10.10.11/` : 本システムと船舶管制システムへのリンクを並べたメニューページ
 - `http://10.10.10.11/weather` : 気象データ管理システム本体（このアプリ）
+- `http://10.10.10.11/nagoya-control` : 名古屋港 船舶管制システム（別リポジトリ）
+- `http://10.10.10.11/irago-control` : 伊良湖水道 船舶管制システム（別リポジトリ）
 
-`/`直下ではなく`/weather`配下で配信されるのは、同じサーバー上で別途稼働している船舶管制システム(ポート3000, 別リポジトリ)と共存させるためです。
+`/`直下ではなく`/weather`配下で配信されるのは、同じサーバー上で別途稼働している船舶管制システム群（別リポジトリ）と共存させるためです。
 
 ## 使用方法
 

@@ -51,18 +51,24 @@ chmod 644 "$ENV_FILE"
 echo "5. Nginx設定を更新中..."
 sed -i "s/10.10.10.11/$DOMAIN/g" docker/nginx.conf
 
+# 6. 船舶管制システム(nagoya-control, irago-schedule)と共有する外部ネットワークを用意
+echo "6. 共有ネットワーク(isewan-edge)を確認中..."
+if ! docker network inspect isewan-edge > /dev/null 2>&1; then
+    docker network create isewan-edge
+fi
+
 COMPOSE_FILE="docker-compose.prod.yml"
 
-# 6. Docker イメージをビルド
-echo "6. Dockerイメージをビルド中..."
+# 7. Docker イメージをビルド
+echo "7. Dockerイメージをビルド中..."
 docker-compose -f "$COMPOSE_FILE" build
 
-# 7. コンテナを起動
-echo "7. コンテナを起動中..."
+# 8. コンテナを起動
+echo "8. コンテナを起動中..."
 docker-compose -f "$COMPOSE_FILE" up -d
 
-# 8. ヘルスチェック
-echo "8. サービスの起動を確認中..."
+# 9. ヘルスチェック
+echo "9. サービスの起動を確認中..."
 sleep 15
 
 # 複数のエンドポイントでヘルスチェック

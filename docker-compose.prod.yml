@@ -30,6 +30,8 @@ services:
         reservations:
           memory: 256M
           cpus: '0.25'
+    networks:
+      - edge
 
   nginx:
     image: nginx:alpine
@@ -52,3 +54,13 @@ services:
         reservations:
           memory: 64M
           cpus: '0.1'
+    networks:
+      - edge
+
+# nginx から /nagoya-control, /irago-control をプロキシするための共有ネットワーク。
+# nagoya-control・irago-schedule 側の docker-compose.yml でも同じ external
+# ネットワークに参加させる必要がある（初回のみ `docker network create isewan-edge`）。
+networks:
+  edge:
+    external: true
+    name: isewan-edge
