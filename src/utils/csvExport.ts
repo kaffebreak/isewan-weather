@@ -15,6 +15,12 @@ const CSV_HEADERS = {
   MARINE: ['日時', '伊良湖岬_風向', '伊良湖岬_風速', '伊勢湾2号ブイ_風向', '伊勢湾2号ブイ_風速', '伊勢湾2号ブイ_波高', '大王埼_風向', '大王埼_風速', '大王埼_波高']
 } as const;
 
+// 風速0m/s・波高0mは実測値であり「データなし」ではないため、`value || ''` で
+// 空文字にしてしまわないよう undefined/null のみを空欄として扱う。
+function formatNumber(value?: number | null): string {
+  return value === undefined || value === null ? '' : String(value);
+}
+
 export function exportToCSV(data: WeatherData[], filename: string = 'weather_data.csv'): void {
   if (data.length === 0) {
     alert(ERROR_MESSAGES.NO_DATA);
@@ -32,8 +38,8 @@ export function exportToCSV(data: WeatherData[], filename: string = 'weather_dat
       row.station_code,
       formatTimestampForCSV(row.timestamp),
       row.wind_status === 'weak' ? '風弱く' : row.wind_direction || '',
-      row.wind_speed || '',
-      row.wave_height || '',
+      formatNumber(row.wind_speed),
+      formatNumber(row.wave_height),
       formatTimestampForCSV(row.created_at || '')
     ].join(','))
   ].join('\n');
@@ -120,13 +126,13 @@ export function exportToCSVForMarine(data: WeatherData[], filename: string = 'ma
       ...Array.from(groupedData.entries()).map(([timestamp, stations]) => [
         formatTimestampForCSV(timestamp),
         stations.iragomisaki?.wind_status === 'weak' ? '風弱く' : stations.iragomisaki?.wind_direction || '',
-        stations.iragomisaki?.wind_speed || '',
+        formatNumber(stations.iragomisaki?.wind_speed),
         stations.iragosuido?.wind_status === 'weak' ? '風弱く' : stations.iragosuido?.wind_direction || '',
-        stations.iragosuido?.wind_speed || '',
-        stations.iragosuido?.wave_height || '',
+        formatNumber(stations.iragosuido?.wind_speed),
+        formatNumber(stations.iragosuido?.wave_height),
         stations.daiosaki?.wind_status === 'weak' ? '風弱く' : stations.daiosaki?.wind_direction || '',
-        stations.daiosaki?.wind_speed || '',
-        stations.daiosaki?.wave_height || ''
+        formatNumber(stations.daiosaki?.wind_speed),
+        formatNumber(stations.daiosaki?.wave_height)
       ].join(','))
     ].join('\n');
 
