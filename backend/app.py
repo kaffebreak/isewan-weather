@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import logging
 import os
 import threading
 import time
@@ -320,6 +321,14 @@ def run_server(port=8000, host='0.0.0.0'):
         httpd.shutdown()
 
 if __name__ == '__main__':
+    # WARNING/ERROR (e.g. the scraper's "0 records parsed" anomaly alerts)
+    # show up by default; set LOG_LEVEL=DEBUG for the scraper's per-request
+    # encoding/table-count diagnostics.
+    logging.basicConfig(
+        level=os.environ.get('LOG_LEVEL', 'INFO'),
+        format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+    )
+
     port = int(os.environ.get('PORT', 8000))
     host = os.environ.get('HOST', '0.0.0.0')
 

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import requests
 from bs4 import BeautifulSoup
@@ -6,15 +7,30 @@ import re
 from datetime import datetime, timedelta
 import time
 
+logger = logging.getLogger(__name__)
+
 class HTMLTableParser:
     def __init__(self):
         self.rows = []
-    
+        self.table_count = 0
+
     def parse_html(self, html_content):
-        """Parse HTML content using BeautifulSoup"""
+        """Parse HTML content using BeautifulSoup.
+
+        `html_content` should be raw bytes rather than a pre-decoded str.
+        Bytes let BeautifulSoup's UnicodeDammit resolve the real encoding
+        itself (checking any in-page <meta charset> declaration first,
+        then falling back to content-based sniffing) instead of trusting
+        a charset that was already baked into a decoded string.
+        """
         soup = BeautifulSoup(html_content, 'html.parser')
         tables = soup.find_all('table')
-        
+        self.table_count = len(tables)
+        logger.debug(
+            "Parsed HTML using detected encoding=%r: found %d table(s)",
+            getattr(soup, 'original_encoding', None), self.table_count,
+        )
+
         for table in tables:
             rows = []
             for tr in table.find_all('tr'):
@@ -29,9 +45,17 @@ class HTMLTableParser:
                 break  # Use the first table with data
 
 class WeatherScraper:
+    # If every station returns 0 records for this many scrape cycles in a
+    # row, treat it as a scraper failure (bad HTML/encoding, site layout
+    # change, etc.) rather than a genuine lack of new upstream data --
+    # the 2026-08-15 mojibake outage looked identical to "no new data"
+    # for hours before anyone noticed.
+    CONSECUTIVE_EMPTY_SCRAPE_ALERT_THRESHOLD = 3
+
     def __init__(self):
         self.stations = self._load_stations()
-    
+        self._consecutive_empty_scrapes = 0
+
     def _load_stations(self):
         try:
             # Assuming stations.json is in parent directory of modules
@@ -53,15 +77,35 @@ class WeatherScraper:
             response = requests.get(url, headers=headers, timeout=15)
             response.raise_for_status()
 
-            # Some of these government sites don't declare a charset in
-            # their Content-Type header, in which case requests leaves
-            # response.encoding unset. Fall back to content-based detection
-            # (requests' apparent_encoding) instead of assuming UTF-8, which
-            # would silently mangle Shift-JIS/EUC-JP pages.
-            if response.encoding is None:
-                response.encoding = response.apparent_encoding
+            content_type = response.headers.get('Content-Type', '')
+            logger.debug(
+                "Fetched %s: Content-Type=%r requests_encoding=%r apparent_encoding=%r",
+                url, content_type, response.encoding, response.apparent_encoding,
+            )
 
-            return response.text
+            # Some of these government sites don't declare a charset in
+            # their Content-Type header. Per RFC 2616, `requests` then
+            # defaults response.encoding to ISO-8859-1 (rather than
+            # leaving it unset) -- this is almost never correct for a
+            # Japanese page and silently mangled every station's HTML
+            # into mojibake during the 2026-08-15 outage, since decoding
+            # bytes as ISO-8859-1 always "succeeds" without raising.
+            #
+            # Rather than special-case that one encoding name, hand the
+            # raw bytes to the caller so BeautifulSoup can resolve the
+            # encoding itself: it checks for a <meta charset> declaration
+            # in the HTML first, then falls back to content-based
+            # detection -- more reliable than trusting a charset-less
+            # Content-Type header either way.
+            if 'charset=' not in content_type.lower():
+                logger.warning(
+                    "%s: no charset declared in Content-Type (%r); requests reported "
+                    "encoding=%r, which is unreliable here. Letting BeautifulSoup "
+                    "detect the real encoding from the page content instead.",
+                    url, content_type, response.encoding,
+                )
+
+            return response.content
         except Exception as e:
             print(f"Failed to fetch {url}: {e}")
             return None
@@ -71,18 +115,24 @@ class WeatherScraper:
         parser.parse_html(html_content)
         
         if not parser.rows:
-            print(f"No table found for station: {station_code}")
+            logger.warning(
+                "%s: no data rows found (parsed %d table(s) from the page). This can mean "
+                "the page layout changed, or that the HTML was decoded with the wrong "
+                "character encoding.",
+                station_code, parser.table_count,
+            )
             return []
-        
+
         data = []
         header_found = False
-        
+
         for row in parser.rows:
             if not header_found:
                 # Look for header row containing time-related keywords
                 row_text = ' '.join(row).lower()
                 if '時刻' in row_text or 'time' in row_text or '時' in row_text:
                     header_found = True
+                    logger.debug("%s: header row detected: %r", station_code, row)
                 continue
             
             if len(row) < 3:
@@ -173,7 +223,15 @@ class WeatherScraper:
             except Exception as e:
                 print(f"Error parsing row for {station_code}: {e}")
                 continue
-        
+
+        if not header_found:
+            logger.warning(
+                "%s: could not find a header row containing '時刻'/'time' among %d row(s); "
+                "first row was %r. No records were parsed -- likely a page layout change or "
+                "a character-encoding problem.",
+                station_code, len(parser.rows), parser.rows[0] if parser.rows else None,
+            )
+
         return data
     
     def scrape_station(self, station):
@@ -197,7 +255,27 @@ class WeatherScraper:
                 time.sleep(2)  # Delay between requests to be respectful
             except Exception as e:
                 print(f"Failed to scrape {station['name']}: {e}")
-        
+
+        if self.stations and not all_data:
+            self._consecutive_empty_scrapes += 1
+            logger.warning(
+                "HTTP requests succeeded but no weather records were parsed from any of "
+                "the %d station(s) (%d consecutive empty scrape(s)). This usually means an "
+                "HTML structure or character-encoding problem, not a genuine lack of new "
+                "data.",
+                len(self.stations), self._consecutive_empty_scrapes,
+            )
+            if self._consecutive_empty_scrapes >= self.CONSECUTIVE_EMPTY_SCRAPE_ALERT_THRESHOLD:
+                logger.error(
+                    "No weather records have been parsed from any station for %d scrape "
+                    "cycles in a row. Treat this as a scraper failure and investigate -- it "
+                    "is very unlikely that all %d stations genuinely had zero new data for "
+                    "that long.",
+                    self._consecutive_empty_scrapes, len(self.stations),
+                )
+        else:
+            self._consecutive_empty_scrapes = 0
+
         return self.align_to_reference_time(all_data)
     
     def align_to_reference_time(self, all_data):
